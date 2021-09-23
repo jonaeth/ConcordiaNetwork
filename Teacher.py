@@ -17,7 +17,7 @@ class Teacher(ABC):
         else:
             self.predicates = []
 
-    def build_model(self, predicate_file, rules_file):
+    def build_model(self, predicate_file, rules_file, predicate_folder):
         pass
 
     def __str__(self):
@@ -54,11 +54,11 @@ class PSLTeacher(Teacher):
                 'votedperceptron.numsteps': '2'
             }
 
-    def build_model(self, predicate_file, rules_file):
-
+    def build_model(self, predicate_file, rules_file, predicate_folder):
         self.model = Model(self.model_name)
         self._add_predicates(predicate_file)
         self._add_rules(rules_file)
+        self._ground_predicates(predicate_folder)
 
     def __str__(self):
         rules = '\n'.join(str(rule) for rule in self.model.get_rules())
@@ -70,9 +70,6 @@ class PSLTeacher(Teacher):
                 f.write(str(rule) + '\n')
 
     def fit(self):
-        # We have to find a good option to store difference between observations and truths
-        for predicate in self.predicates:
-            self.model.get_predicate(predicate).clear_data().add_data_file(Partition.OBSERVATIONS, '')
         self.model.learn(additional_cli_optons=self.cli_options, psl_config=self.psl_options)
 
     def predict(self):
@@ -87,9 +84,29 @@ class PSLTeacher(Teacher):
                 predicate = line.split('\t')
                 predicate_name = predicate[0]
                 self.predicates.append(predicate_name)
-                is_closed = bool(predicate[1])
-                arity = int(predicate[3])
+                is_closed = True if predicate[1] == 'True' else False
+                arity = int(predicate[2].strip())
                 self.model.add_predicate(Predicate(predicate_name, closed=is_closed, size=arity))
+
+    def _ground_predicates(self, predicate_folder):
+        grounded_predicates = []
+        observations_folder = f'{predicate_folder}/observations/'
+        targets_folder = f'{predicate_folder}/targets/'
+        truths_folder = f'{predicate_folder}/truths/'
+        observed_predicates = [predicate.replace('.txt', '') for predicate in os.listdir(observations_folder)]
+        target_predicates = [predicate.replace('.txt', '') for predicate in os.listdir(targets_folder)]
+        truth_predicates = [predicate.replace('.txt', '') for predicate in os.listdir(truths_folder)]
+        for predicate in self.predicates:
+            if predicate not in grounded_predicates:
+                self.model.get_predicate(predicate).clear_data()
+            if predicate in observed_predicates:
+                self.model.get_predicate(predicate).add_data_file(Partition.OBSERVATIONS, f'{observations_folder}/{predicate}.txt')
+            if predicate in target_predicates:
+                self.model.get_predicate(predicate).add_data_file(Partition.TARGETS, f'{targets_folder}/{predicate}.txt')
+            if predicate in truth_predicates:
+                self.model.get_predicate(predicate).add_data_file(Partition.TRUTH, f'{truths_folder}/{predicate}.txt')
+            grounded_predicates.append(predicate)
+
 
     def _add_rules(self, rules_file):
         with open(rules_file, 'r') as r_file:

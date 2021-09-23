@@ -1,17 +1,11 @@
-# This is a sample Python script.
+from Teacher import PSLTeacher
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+predicate_file = 'Experiments/VQA/data/teacher/model/predicates.psl'
+rule_file = 'Experiments/VQA/data/teacher/model/model.psl'
+train_predicate_folder = 'Experiments/VQA/data/teacher/train'
 
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
-
-
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
-#
+psl_model = PSLTeacher()
+psl_model.build_model(predicate_file=predicate_file, rules_file=rule_file, predicate_folder=train_predicate_folder)
+psl_model.fit()
+print(psl_model.predict())
+print(psl_model)
