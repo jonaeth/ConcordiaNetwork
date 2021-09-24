@@ -6,6 +6,7 @@ from pslpython.model import Model
 from pslpython.partition import Partition
 from pslpython.predicate import Predicate
 from pslpython.rule import Rule
+from distutils.util import strtobool
 
 class Teacher(ABC):
 
@@ -84,8 +85,8 @@ class PSLTeacher(Teacher):
                 predicate = line.split('\t')
                 predicate_name = predicate[0]
                 self.predicates.append(predicate_name)
-                is_closed = True if predicate[1] == 'True' else False
-                arity = int(predicate[2].strip())
+                is_closed = strtobool(predicate[1])
+                arity = int(predicate[2])
                 self.model.add_predicate(Predicate(predicate_name, closed=is_closed, size=arity))
 
     def _ground_predicates(self, predicate_folder):
@@ -93,18 +94,18 @@ class PSLTeacher(Teacher):
         observations_folder = f'{predicate_folder}/observations/'
         targets_folder = f'{predicate_folder}/targets/'
         truths_folder = f'{predicate_folder}/truths/'
-        observed_predicates = [predicate.replace('.txt', '') for predicate in os.listdir(observations_folder)]
-        target_predicates = [predicate.replace('.txt', '') for predicate in os.listdir(targets_folder)]
-        truth_predicates = [predicate.replace('.txt', '') for predicate in os.listdir(truths_folder)]
-        for predicate in self.predicates:
+        observed_predicates = [predicate.replace('.psl', '') for predicate in os.listdir(observations_folder)]
+        target_predicates = [predicate.replace('.psl', '') for predicate in os.listdir(targets_folder)]
+        truth_predicates = [predicate.replace('.psl', '') for predicate in os.listdir(truths_folder)]
+        for predicate in self.predicates:  # TODO Change logic. Loop folders instead
             if predicate not in grounded_predicates:
                 self.model.get_predicate(predicate).clear_data()
             if predicate in observed_predicates:
-                self.model.get_predicate(predicate).add_data_file(Partition.OBSERVATIONS, f'{observations_folder}/{predicate}.txt')
+                self.model.get_predicate(predicate).add_data_file(Partition.OBSERVATIONS, f'{observations_folder}/{predicate}.psl')
             if predicate in target_predicates:
-                self.model.get_predicate(predicate).add_data_file(Partition.TARGETS, f'{targets_folder}/{predicate}.txt')
+                self.model.get_predicate(predicate).add_data_file(Partition.TARGETS, f'{targets_folder}/{predicate}.psl')
             if predicate in truth_predicates:
-                self.model.get_predicate(predicate).add_data_file(Partition.TRUTH, f'{truths_folder}/{predicate}.txt')
+                self.model.get_predicate(predicate).add_data_file(Partition.TRUTH, f'{truths_folder}/{predicate}.psl')
             grounded_predicates.append(predicate)
 
 

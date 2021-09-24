@@ -29,7 +29,7 @@ def run_psl(model=None):
     model.get_predicate('Close').clear_data().add_data_file(Partition.OBSERVATIONS,
                                                             f'{data_path_to_obs}/close_obs.txt')
     #model.get_predicate('Seq').clear_data().add_data_file(Partition.OBSERVATIONS,
-    #                                                      f'{data_path_to_obs}/Sequence.txt')
+    #                                                      f'{data_path_to_obs}/Sequence.psl')
     model.get_predicate('Same').clear_data().add_data_file(Partition.OBSERVATIONS,
                                                            f'{data_path_to_obs}/same_obs.txt')
     model.get_predicate('Doing').clear_data().add_data_file(Partition.TARGETS,
