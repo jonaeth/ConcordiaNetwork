@@ -18,7 +18,7 @@ class Teacher(ABC):
         else:
             self.predicates = []
 
-    def build_model(self, predicate_file, rules_file, predicate_folder):
+    def build_model(self, predicate_file, rules_file):
         pass
 
     def __str__(self):
@@ -54,11 +54,10 @@ class PSLTeacher(Teacher):
                 #'votedperceptron.numsteps': '2'
             }
 
-    def build_model(self, predicate_file, rules_file, predicate_folder):
+    def build_model(self, predicate_file, rules_file):
         self.model = Model(self.model_name)
         self._add_predicates(predicate_file)
         self._add_rules(rules_file)
-        self._ground_predicates(predicate_folder)
 
     def __str__(self):
         rules = '\n'.join(str(rule) for rule in self.model.get_rules())
@@ -88,7 +87,7 @@ class PSLTeacher(Teacher):
                 arity = int(predicate[2])
                 self.model.add_predicate(Predicate(predicate_name, closed=is_closed, size=arity))
 
-    def _ground_predicates(self, predicate_folder):
+    def set_ground_predicates(self, predicate_folder):
         grounded_predicates = []
         observations_folder = f'{predicate_folder}/observations/'
         targets_folder = f'{predicate_folder}/targets/'
