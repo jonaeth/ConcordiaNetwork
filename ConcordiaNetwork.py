@@ -1,7 +1,9 @@
 class ConcordiaNetwork:
-    def __init__():
+    def __init__(self, Student, Teacher):
         pass
-    def fit():
+
+    def fit(self):
         pass
-    def predict():
+
+    def predict(self):
         pass

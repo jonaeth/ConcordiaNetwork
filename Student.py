@@ -1,7 +1,14 @@
-class Student:
-    def __init__():
+from abc import ABC
+
+
+class Student(ABC):
+    def __init__(self, neural_network_module):
         pass
-    def fit():
+
+    def predict(self, inputs):
         pass
-    def predict():
-        pass
+
+
+
+
+

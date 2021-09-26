@@ -8,8 +8,8 @@ from pslpython.predicate import Predicate
 from pslpython.rule import Rule
 from distutils.util import strtobool
 
-class Teacher(ABC):
 
+class Teacher(ABC):
     def __init__(self, model_name='model', model=None, predicates=None):
         self.model_name = model_name
         self.model = model
@@ -35,7 +35,6 @@ class Teacher(ABC):
 
 
 class PSLTeacher(Teacher):
-
     def __init__(self,
                  model_name='model',
                  model=None,
@@ -52,7 +51,7 @@ class PSLTeacher(Teacher):
         else:
             self.psl_options = {
                 'log4j.threshold': 'OFF',  # TODO Discuss good default
-                'votedperceptron.numsteps': '2'
+                #'votedperceptron.numsteps': '2'
             }
 
     def build_model(self, predicate_file, rules_file, predicate_folder):
@@ -71,7 +70,7 @@ class PSLTeacher(Teacher):
                 f.write(str(rule) + '\n')
 
     def fit(self):
-        self.model.learn(additional_cli_optons=self.cli_options, psl_config=self.psl_options)
+        self.model.learn(additional_cli_optons=self.cli_options, psl_config=self.psl_options, jvm_options=['-Xms4096M', '-Xmx12000M'])
 
     def predict(self):
         # Why result'S'?
