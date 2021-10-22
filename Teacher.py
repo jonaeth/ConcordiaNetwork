@@ -72,17 +72,12 @@ class PSLTeacher(Teacher):
                 f.write(str(rule) + '\n')
 
     def fit(self):
-        self.model.learn(additional_cli_optons=self.cli_options, psl_config=self.psl_options, jvm_options=['-Xms4096M', '-Xmx12000M'])
+        self.model.learn(additional_cli_optons=self.cli_options, psl_config=self.psl_options, jvm_options=['-Xms4096M', '-Xmx12000M']) # TODO to config file
 
     def predict(self):
-        # Why result'S'?
         results = self.model.infer(additional_cli_optons=self.cli_options, psl_config=self.psl_options)
-        predictions = results[self.model.get_predicate('Doing')].sort_values(by=[0, 1]) #TODO make [0, 1] automaticly computed by arity
-        # You return the model separately (not really needed, but then you only return results for one predicate
+        predictions = results[self.model.get_predicate(self.predicate_to_infer)].sort_values(by=[0, 1]) # TODO make [0, 1] automaticly computed by arity
         return predictions
-
-
-
 
     def _add_predicates(self, predicate_file):
         with open(predicate_file, 'r') as p_file:
@@ -112,7 +107,6 @@ class PSLTeacher(Teacher):
             if predicate in truth_predicates:
                 self.model.get_predicate(predicate).add_data_file(Partition.TRUTH, f'{truths_folder}/{predicate}.psl')
             grounded_predicates.append(predicate)
-
 
     def _add_rules(self, rules_file):
         with open(rules_file, 'r') as r_file:
