@@ -17,7 +17,7 @@ import os
 print('jj')
 
 psl_model = PSLTeacher()
-psl_model.build_model(predicate_file=predicate_file, rules_file=rule_file, predicate_folder=train_predicate_folder)
+psl_model.build_model(predicate_file=predicate_file, rules_file=rule_file)
 print('Learning rule weights')
 psl_model.fit()
 print('Making inference')

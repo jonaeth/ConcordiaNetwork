@@ -6,5 +6,4 @@ paths = {
     'train_predicates': 'data/teacher/train_predicates.psl',
     'train_data': 'data/student/train/',
     'test_data': 'data/student/test/'
-
 }

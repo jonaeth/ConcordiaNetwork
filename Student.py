@@ -10,9 +10,6 @@ class Student(ABC):
         else:
             self.optimizer = Adam(self.model.parameters(), lr=0.001)
 
-    def build_model(self, predicate_file, rules_file):
-        pass
-
     def __str__(self):
         pass
 
@@ -22,7 +19,7 @@ class Student(ABC):
     def fit(self, loss):
         pass
 
-    def predict(self):
+    def predict(self, inputs):
         pass
 
 

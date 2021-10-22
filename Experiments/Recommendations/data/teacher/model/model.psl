@@ -1,0 +1,20 @@
+rated(U,I1) & rated(U,I2) & rating(U,I1) & sim_pearson_items(I1,I2) >> rating(U,I2)	1
+rated(U,I1) & rated(U,I2) & rating(U,I1) & sim_cosine_items(I1,I2) >> rating(U,I2)	1
+rated(U,I1) & rated(U,I2) & rating(U,I1) & sim_adjcos_items(I1,I2) >> rating(U,I2)	1
+rated(U1,I) & rated(U2,I) & rating(U1,I) & sim_pearson_users(U1,U2) >> rating(U2,I)	1
+rated(U1,I) & rated(U2,I) & rating(U1,I) & sim_cosine_users(U1,U2) >> rating(U2,I)	1
+user(U1) & user(U2) & item(I) & rating(U1,I) & rated(U1,I) & rated(U2,I) & sim_mf_cosine_users(U1,U2) >> rating(U2,I)	1
+user(U1) & user(U2) & item(I) & rating(U1,I) & rated(U1,I) & rated(U2,I) & sim_mf_euclidean_users(U1,U2) >> rating(U2,I)	1
+user(U) & item(I1) & item(I2) & rating(U,I1) & rated(U,I1) & rated(U,I2) & sim_mf_cosine_items(I1,I2) >> rating(U,I2)	1
+user(U) & item(I1) & item(I2) & rating(U,I1) & rated(U,I1) & rated(U,I2) & sim_mf_euclidean_items(I1,I2) >> rating(U,I2)	1
+sgd_rating(U,I) >> rating(U,I)	1
+rating(U,I) >> sgd_rating(U,I)	1
+bpmf_rating(U,I) >> rating(U,I)	1
+rating(U,I) >> bpmf_rating(U,I)	1
+item_pearson_rating(U,I) >> rating(U,I)	1
+rating(U,I) >> item_pearson_rating(U,I)	1
+user(U) & item(I) & rated(U,I) & avg_user_rating(U) >> rating(U,I)	1
+user(U) & item(I) & rated(U,I) & rating(U,I) >> avg_user_rating(U)	1
+user(U) & item(I) & rated(U,I) & avg_item_rating(I) >> rating(U,I)	1
+user(U) & item(I) & rated(U,I) & rating(U,I) >> avg_item_rating(I)	1
+rated(U,I1) & rated(U,I2) & rating(U,I1) & sim_content_items_jaccard(I1,I2) >> rating(U,I2)	1

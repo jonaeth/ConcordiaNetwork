@@ -14,5 +14,5 @@
 *.pyc
 
 /Experiments/CollectiveActivity/data/collective/ActivityDataset/**
-/Experiments/Recommendations/data/teacher/**
-/Experiments/Recommendations/data/teacher/**
+/Experiments/Recommendations/data/teacher/train/**
+/Experiments/Recommendations/data/teacher/test/**
