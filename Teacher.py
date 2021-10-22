@@ -10,9 +10,10 @@ from distutils.util import strtobool
 
 
 class Teacher(ABC):
-    def __init__(self, model_name='model', model=None, predicates=None):
+    def __init__(self, model_name='model', model=None, predicates=None, predicate_to_infer=None):
         self.model_name = model_name
         self.model = model
+        self.predicate_to_infer = predicate_to_infer
         if predicates:
             self.predicates = predicates
         else:
@@ -39,9 +40,11 @@ class PSLTeacher(Teacher):
                  model_name='model',
                  model=None,
                  predicates=None,
+                 predicate_to_infer=None,
                  cli_options=None,
                  psl_options=None):
-        super().__init__(model_name=model_name, model=model, predicates=predicates)
+        super().__init__(model_name=model_name, model=model, predicates=predicates,
+                         predicate_to_infer=predicate_to_infer)
         if cli_options:
             self.cli_options = cli_options
         else:
@@ -51,7 +54,7 @@ class PSLTeacher(Teacher):
         else:
             self.psl_options = {
                 'log4j.threshold': 'OFF',  # TODO Discuss good default
-                #'votedperceptron.numsteps': '2'
+                'votedperceptron.numsteps': '2'
             }
 
     def build_model(self, predicate_file, rules_file):
@@ -74,8 +77,12 @@ class PSLTeacher(Teacher):
     def predict(self):
         # Why result'S'?
         results = self.model.infer(additional_cli_optons=self.cli_options, psl_config=self.psl_options)
+        predictions = results[self.model.get_predicate('Doing')].sort_values(by=[0, 1]) #TODO make [0, 1] automaticly computed by arity
         # You return the model separately (not really needed, but then you only return results for one predicate
-        return results
+        return predictions
+
+
+
 
     def _add_predicates(self, predicate_file):
         with open(predicate_file, 'r') as p_file:

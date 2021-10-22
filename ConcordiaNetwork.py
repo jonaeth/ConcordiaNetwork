@@ -1,36 +1,35 @@
-import types
-from torch.utils.data.dataloader import DataLoader
-from torch.utils.data.dataset import Dataset
 import torch
 from torch.utils.data import TensorDataset, RandomSampler, DataLoader
-
+from tqdm import tqdm
 
 class ConcordiaNetwork:
-    def __init__(self, student, teacher, predicate_builder, loss_function, teacher_offline):
-        self.loss_function = loss_function
+    def __init__(self, student, teacher, predicate_builder, student_teacher_loss, student_target_loss, teacher_offline):
+        self.student_teacher_loss = student_teacher_loss
+        self.student_target_loss = student_target_loss
         self.student = student
         self.teacher = teacher
         self.predicate_builder = predicate_builder
         self.teacher_offline = teacher_offline
+        self.device = torch.device('cuda', 0) #TODO replace this with config settings
 
-    def fit(self, inputs, targets=None):
+    def fit(self, input_data_loader, targets=None):
         self.student.model.train()
         if self.teacher_offline:
             self._fit_teacher_offline(inputs, targets)
         else:
-            self._fit_teacher_online(inputs, targets)
+            self._fit_teacher_online(input_data_loader)
 
-    def _fit_teacher_online(self, inputs, targets=None):
-        data_loader = self._create_tensor_dataloader(inputs, targets)
-        for input, target in data_loader:
+    def _fit_teacher_online(self, input_data_loader):
+        for input, target in tqdm(input_data_loader):
             student_prediction = self.student.predict(input)
-            self.predicate_builder.build_predicates(input, student_prediction)
+            self.predicate_builder.build_predicates(input, student_prediction, target)
+            self.teacher.set_ground_predicates(self.predicate_builder.path_to_save_predicates)
             self.teacher.fit()
             teacher_prediction = self.teacher.predict()
             loss = self.compute_loss(student_prediction, teacher_prediction, target)
             self.student.fit(loss)
 
-    def _fit_teacher_offline(self, inputs, targets=None):
+    def _fit_teacher_offline(self, input_loader, targets=None):
         self.teacher.fit()
         teacher_predictions = self.teacher.predict()
         data_loader = self._create_tensor_dataloader(teacher_predictions, batch_size=12)
@@ -43,7 +42,7 @@ class ConcordiaNetwork:
         pass
 
     def compute_loss(self, student_predictions, teacher_predictions, target_values):
-        return self.loss_function(student_predictions, teacher_predictions) + 0
+        return self.student_teacher_loss(student_predictions, teacher_predictions) + self.student_target_loss(student_predictions, target_values) #TODO add the balancing params
 
     def _create_tensor_dataloader_for_neural_network(self, input_data, target_data, batch_size):
         input_data = torch.tensor(input_data)
@@ -59,19 +58,6 @@ class ConcordiaNetwork:
         teacher_predictions = TensorDataset(teacher_predictions)
         return DataLoader(teacher_predictions, batch_size=batch_size)
 
-
-class ConcordiaDataLoader:
-    def __init__(self, x, y=None, teacher_predictions=None):
-        self.x = x
-        self.y = y
-        self.teacher_predictions = teacher_predictions
-
-    def _create_generator(self):
-        if type(self.x):
-            pass
-
-    def __next__(self):
-        pass
 
 '''
 def compute_losses(self, predictions, targets):

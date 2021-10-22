@@ -12,9 +12,9 @@ class CollectiveActivityNet(Student):
         return actions_scores, activities_scores
 
     def fit(self, loss):
-        loss.backwards()
-        self.optimizer.step()
         self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
 
     @staticmethod
     def set_bn_eval(m):

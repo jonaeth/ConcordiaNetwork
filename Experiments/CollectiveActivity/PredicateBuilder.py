@@ -9,16 +9,17 @@ class PredicateBuilder:
         self.cfg = collective_activity_config
 
     def write_predicate_to_file(self, predicate_values, predicate_name, predicate_visibility):
-        with open(f'{predicate_values}/{predicate_visibility}/{predicate_name}.psl') as fp:
+        with open(f'{self.path_to_save_predicates}/{predicate_visibility}/{predicate_name}.psl', 'w') as fp:
             for predicate_tuple in predicate_values:
-                fp.write('\t'.join(predicate_tuple))
+                fp.write('\t'.join([str(val) for val in predicate_tuple]) + '\n')
 
-    def build_predicates(self, inputs, student_predictions):
+    def build_predicates(self, inputs, student_predictions, targets):
         batch_data = inputs
         batch_size=batch_data[0].shape[0]
         num_frames=batch_data[0].shape[1]
-        actions_in = batch_data[2].reshape((batch_size, num_frames, self.cfg.num_boxes))
-        bboxes_num = batch_data[4].reshape(batch_size, num_frames)
+        actions_in = targets[0].reshape((batch_size, num_frames, self.cfg.num_boxes))
+        bboxes_num = batch_data[2].reshape(batch_size, num_frames)
+        action_scores, activities_scores = student_predictions
 
         actions_in_nopad_same_shape = []
 
@@ -29,7 +30,7 @@ class PredicateBuilder:
             actions_in_nopad_same_shape.append(actions_of_batch)
 
         bounding_boxes = batch_data[1].detach().cpu().numpy()
-        actions_scores_original_size = self._convert_action_scores_to_original_shape(student_predictions, bboxes_num, batch_size)
+        actions_scores_original_size = self._convert_action_scores_to_original_shape(action_scores, bboxes_num, batch_size)
         bboxes_nopad = self._remove_padding_from_bounding_boxes(bounding_boxes, bboxes_num, batch_size)
         ground_truths = [[np.identity(self.cfg.num_actions)[action.cpu().numpy()] for action in batch] for batch in actions_in_nopad_same_shape]
 
