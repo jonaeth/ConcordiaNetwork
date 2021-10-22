@@ -12,3 +12,7 @@
 *.xml
 *.iml
 *.pyc
+
+/Experiments/CollectiveActivity/data/collective/ActivityDataset/**
+/Experiments/Recommendations/data/teacher/**
+/Experiments/Recommendations/data/teacher/**
