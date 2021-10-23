@@ -1,4 +1,4 @@
-from Student import Student
+from Concordia.Student import Student
 
 
 class CollectiveActivityNet(Student):

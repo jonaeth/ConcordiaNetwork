@@ -1,15 +1,17 @@
-from Teacher import PSLTeacher
+from Concordia.Teacher import PSLTeacher
 from Experiments.CollectiveActivity.CollectiveActivityNet import CollectiveActivityNet
 from Experiments.CollectiveActivity.NeuralNetworkModels.BaseNet import BaseNet
 from torch.optim import Adam
 from Experiments.CollectiveActivity.PredicateBuilder import PredicateBuilder
 from Experiments.CollectiveActivity.config_experiment1 import cfg
 from Experiments.CollectiveActivity.dataset import return_dataset
-from ConcordiaNetwork import ConcordiaNetwork
+from Concordia.ConcordiaNetwork import ConcordiaNetwork
 from torch.utils import data
 import numpy as np
 from Experiments.torch_losses import kl_divergence, cross_entropy
 import torch
+from Experiments.CollectiveActivity.concordia_config import concordia_config
+
 
 predicate_file = 'Experiments/CollectiveActivity/data/teacher/model/predicates.psl'
 rule_file = 'Experiments/CollectiveActivity/data/teacher/model/model.psl'

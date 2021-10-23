@@ -81,9 +81,6 @@ class PSLTeacher(Teacher):
         # You return the model separately (not really needed, but then you only return results for one predicate
         return predictions
 
-
-
-
     def _add_predicates(self, predicate_file):
         with open(predicate_file, 'r') as p_file:
             for line in p_file.readlines():
