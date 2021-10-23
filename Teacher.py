@@ -42,7 +42,8 @@ class PSLTeacher(Teacher):
                  predicates=None,
                  predicate_to_infer=None,
                  cli_options=None,
-                 psl_options=None):
+                 psl_options=None,
+                 jvm_options=None):
         super().__init__(model_name=model_name, model=model, predicates=predicates,
                          predicate_to_infer=predicate_to_infer)
         if cli_options:
@@ -56,6 +57,10 @@ class PSLTeacher(Teacher):
                 'log4j.threshold': 'OFF',  # TODO Discuss good default
                 'votedperceptron.numsteps': '2'
             }
+        if jvm_options:
+            self.jvm_options = jvm_options
+        else:
+            self.jvm_options = ['-Xms4096M', '-Xmx12000M']
 
     def build_model(self, predicate_file, rules_file):
         self.model = Model(self.model_name)
@@ -72,7 +77,9 @@ class PSLTeacher(Teacher):
                 f.write(str(rule) + '\n')
 
     def fit(self):
-        self.model.learn(additional_cli_optons=self.cli_options, psl_config=self.psl_options, jvm_options=['-Xms4096M', '-Xmx12000M']) # TODO to config file
+        self.model.learn(additional_cli_optons=self.cli_options,
+                         psl_config=self.psl_options,
+                         jvm_options=self.jvm_options)
 
     def predict(self):
         results = self.model.infer(additional_cli_optons=self.cli_options, psl_config=self.psl_options)
