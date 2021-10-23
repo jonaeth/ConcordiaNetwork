@@ -4,21 +4,21 @@ from tqdm import tqdm
 
 
 class ConcordiaNetwork:
-    def __init__(self, student, teacher, predicate_builder, student_teacher_loss, student_target_loss, teacher_offline):
+    def __init__(self, student, teacher, predicate_builder, student_teacher_loss, student_target_loss, **config):
         self.student_teacher_loss = student_teacher_loss
         self.student_target_loss = student_target_loss
         self.student = student
         self.teacher = teacher
         self.predicate_builder = predicate_builder
-        self.teacher_offline = teacher_offline
-        self.device = torch.device('cuda', 0) #TODO replace this with config settings
+        self.teacher_inference_online = config['use_teacher_inference_online']
+        self.device = config['gpu_device'] if config['gpu_device'] is not None else torch.device('cpu')
 
     def fit(self, input_data_loader, targets=None, **kwargs):
         self.student.model.train()
-        if self.teacher_offline:
-            self._fit_teacher_offline(input_data_loader)
-        else:
+        if self.teacher_inference_online:
             self._fit_teacher_online(input_data_loader)
+        else:
+            self._fit_teacher_offline(input_data_loader)
 
     def _fit_teacher_online(self, input_data_loader, epochs=10, callback=None):
         for epoch in range(1, epochs+1):
@@ -30,7 +30,6 @@ class ConcordiaNetwork:
                 teacher_prediction = self.teacher.predict()
                 loss = self.compute_loss(student_prediction, teacher_prediction, target)
                 self.student.fit(loss)
-                callback()
 
     def _fit_teacher_offline(self, input_loader):
         pass

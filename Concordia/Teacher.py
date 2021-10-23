@@ -19,7 +19,7 @@ class Teacher(ABC):
         else:
             self.predicates = []
 
-    def build_model(self, predicate_file, rules_file):
+    def build_model(self):
         pass
 
     def __str__(self):
@@ -41,31 +41,31 @@ class PSLTeacher(Teacher):
                  model=None,
                  predicates=None,
                  predicate_to_infer=None,
-                 cli_options=None,
-                 psl_options=None,
-                 jvm_options=None):
+                 **config):
         super().__init__(model_name=model_name, model=model, predicates=predicates,
                          predicate_to_infer=predicate_to_infer)
-        if cli_options:
-            self.cli_options = cli_options
+        if 'cli_options' in config:
+            self.cli_options = config['cli_options']
         else:
             self.cli_options = []  # TODO Discuss need
-        if psl_options:
-            self.psl_options = psl_options
+        if 'psl_options' in config:
+            self.psl_options = config['psl_options']
         else:
             self.psl_options = {
                 'log4j.threshold': 'OFF',  # TODO Discuss good default
                 'votedperceptron.numsteps': '2'
             }
-        if jvm_options:
-            self.jvm_options = jvm_options
+        if 'jvm_options' in config:
+            self.jvm_options = config['jvm_options']
         else:
             self.jvm_options = ['-Xms4096M', '-Xmx12000M']
 
-    def build_model(self, predicate_file, rules_file):
+        self.model_path = config['teacher_model_path']
+
+    def build_model(self):
         self.model = Model(self.model_name)
-        self._add_predicates(predicate_file)
-        self._add_rules(rules_file)
+        self._add_predicates(f"{self.model_path}/predicates.psl")
+        self._add_rules(f"{self.model_path}/model.psl")
 
     def __str__(self):
         rules = '\n'.join(str(rule) for rule in self.model.get_rules())

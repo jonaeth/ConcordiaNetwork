@@ -3,7 +3,7 @@ import torch.nn as nn
 from Experiments.CollectiveActivity.NeuralNetworkModels.MobileNet import MobileNet
 from roi_align.roi_align import RoIAlign      # RoIAlign module
 import torch
-from Student import Student
+from Concordia.Student import Student
 import torch.nn.functional as F
 
 

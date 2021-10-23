@@ -18,8 +18,8 @@ rule_file = 'Experiments/CollectiveActivity/data/teacher/model/model.psl'
 train_predicate_folder = 'Experiments/CollectiveActivity/data/teacher/train'
 
 path_to_save_predicates = 'Experiments/CollectiveActivity/data/teacher/train'
-teacher_psl = PSLTeacher(predicate_to_infer='DOING')
-teacher_psl.build_model(predicate_file=predicate_file, rules_file=rule_file)
+teacher_psl = PSLTeacher(predicate_to_infer='DOING', **concordia_config)
+teacher_psl.build_model()
 
 
 def convert_targets_to_right_shape(targets_actions, targets_activities):
@@ -68,6 +68,6 @@ training_set, validation_set=return_dataset(cfg)
 
 training_set_loader = data.DataLoader(training_set)
 
-concordia_network = ConcordiaNetwork(student_nn, teacher_psl, predicate_builder, teacher_student_loss_function, student_target_loss_function, False)
+concordia_network = ConcordiaNetwork(student_nn, teacher_psl, predicate_builder, teacher_student_loss_function, student_target_loss_function, **concordia_config)
 
 concordia_network.fit(training_set_loader)
