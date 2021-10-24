@@ -11,6 +11,7 @@ import numpy as np
 from Experiments.torch_losses import kl_divergence, cross_entropy
 import torch
 from Experiments.CollectiveActivity.concordia_config import concordia_config
+from Experiments.CollectiveActivity.CollectiveActivityCallback import CollectiveActivityCallback
 
 
 predicate_file = 'Experiments/CollectiveActivity/data/teacher/model/predicates.psl'
@@ -59,6 +60,25 @@ def student_target_loss_function(student_predictions, targets):
     target_actions, target_activities = convert_targets_to_right_shape(target_actions, target_activities)
     return cross_entropy(student_predictions_actions, target_actions) + cross_entropy(student_predictions_activities, target_activities)
 
+def actions_accuracy(student_predictions, targets):
+    student_predictions_actions, _ = student_predictions
+    target_actions, _ = convert_targets_to_right_shape(*targets)
+    predicted_actions_labels = torch.argmax(student_predictions_actions, dim=1)
+    actions_correct = torch.sum(torch.eq(predicted_actions_labels.int(), target_actions.int()).float())
+    actions_accuracy = actions_correct.item() / student_predictions_actions.shape[0]
+    return actions_accuracy
+
+def activities_accuracy(student_predictions, targets):
+    _, student_predictions_activities = student_predictions
+    _, target_activities = convert_targets_to_right_shape(*targets)
+    predicted_activities_labels = torch.argmax(student_predictions_activities, dim=1)
+    activities_correct = torch.sum(torch.eq(predicted_activities_labels.int(), target_activities.int()).float())
+    activities_accuracy = activities_correct.item() / student_predictions_activities.shape[0]
+    return activities_accuracy
+
+
+
+
 base_neural_network = BaseNet(cfg)
 optimizer = Adam(base_neural_network.parameters(), lr=0.001)
 student_nn = CollectiveActivityNet(base_neural_network, optimizer)
@@ -67,7 +87,12 @@ predicate_builder = PredicateBuilder(path_to_save_predicates, cfg)
 training_set, validation_set=return_dataset(cfg)
 
 training_set_loader = data.DataLoader(training_set)
+validation_set_loader = data.DataLoader(validation_set)
+
+
+callbacks = [CollectiveActivityCallback(cfg.log_path)]
+custom_metrics = {'actions_acc': actions_accuracy, 'activities_acc': activities_accuracy}
 
 concordia_network = ConcordiaNetwork(student_nn, teacher_psl, predicate_builder, teacher_student_loss_function, student_target_loss_function, **concordia_config)
 
-concordia_network.fit(training_set_loader)
+concordia_network.fit(training_set_loader, validation_set_loader, callbacks=callbacks, metrics=custom_metrics)

@@ -123,13 +123,13 @@ class Config(object):
         self.num_actions = 8 if self.include_walking else 7
         self.num_activities = 7 if self.include_walking else 6
 
-    def init_config(self, need_new_folder=True):
+    def init_config(self, experiment_result_folder, need_new_folder=True):
         if self.exp_name is None:
             time_str = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
             self.exp_name = '/%s_stage%d/%s/' % (self.exp_note, self.training_stage, time_str)
 
-        self.result_path = 'result/%s' % self.exp_name
-        self.log_path = 'result/%s/log.txt' % self.exp_name
+        self.result_path = '%s/%s' % (experiment_result_folder, self.exp_name)
+        self.log_path = '%s/%s/log.txt' % (experiment_result_folder, self.exp_name)
 
         if need_new_folder:
             os.makedirs(self.result_path)

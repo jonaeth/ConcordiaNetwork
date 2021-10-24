@@ -3,13 +3,13 @@ sys.path.append(".")
 from Experiments.CollectiveActivity.config import Config
 
 cfg=Config('collective')
+cfg.init_config('Experiments/CollectiveActivity/result/')
 cfg.training_stage=1
 cfg.train_backbone=True
 
 cfg.image_size=480, 720
 cfg.out_size=57,87
 cfg.num_boxes=13
-
 
 # END: Original code by Zijian and Xinran
 
@@ -63,3 +63,4 @@ if cfg.include_walking:
     cfg.ACTIONS = ['NA', 'Crossing', 'Waiting', 'Queueing', 'Walking', 'Talking', 'Dancing', 'Jogging']
 else:
     cfg.ACTIONS = ['NA', 'Crossing', 'Waiting', 'Queueing', 'Talking', 'Dancing', 'Jogging']
+
