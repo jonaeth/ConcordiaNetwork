@@ -6,7 +6,6 @@ class Config(object):
     """
     class to save config parameter
     """
-
     def __init__(self, dataset_name):
         # Global
         self.image_size = 720, 1280  # input image size
@@ -92,8 +91,8 @@ class Config(object):
         self.train_psl = True
         self.start_psl_at_epoch = 5
 
-        self.remove_walking = True
-        self.include_walking = False
+        self.remove_walking = False
+        self.include_walking = True
 
         self.use_modified_same_predicate = False
 

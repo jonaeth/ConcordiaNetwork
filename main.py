@@ -1,4 +1,5 @@
 from Concordia.Teacher import PSLTeacher
+from Concordia.Student import Student
 from Experiments.CollectiveActivity.CollectiveActivityNet import CollectiveActivityNet
 from Experiments.CollectiveActivity.NeuralNetworkModels.BaseNet import BaseNet
 from torch.optim import Adam
@@ -17,9 +18,11 @@ from Experiments.CollectiveActivity.CollectiveActivityCallback import Collective
 predicate_file = 'Experiments/CollectiveActivity/data/teacher/model/predicates.psl'
 rule_file = 'Experiments/CollectiveActivity/data/teacher/model/model.psl'
 train_predicate_folder = 'Experiments/CollectiveActivity/data/teacher/train'
-
 path_to_save_predicates = 'Experiments/CollectiveActivity/data/teacher/train'
-teacher_psl = PSLTeacher(predicate_to_infer='DOING', **concordia_config)
+
+knowledge_base_factory = PredicateBuilder(path_to_save_predicates, cfg)
+
+teacher_psl = PSLTeacher(predicates_to_infer=['DOING', None], knowledge_base_factory=knowledge_base_factory, **concordia_config)
 teacher_psl.build_model()
 
 
@@ -77,13 +80,14 @@ def activities_accuracy(student_predictions, targets):
     return activities_accuracy
 
 
-
-
+cfg.backbone='mobilenet'
+cfg.backbone='inv3'
 base_neural_network = BaseNet(cfg)
-optimizer = Adam(base_neural_network.parameters(), lr=0.001)
-student_nn = CollectiveActivityNet(base_neural_network, optimizer)
 
-predicate_builder = PredicateBuilder(path_to_save_predicates, cfg)
+params = list(filter(lambda p: p.requires_grad, base_neural_network.parameters()))
+optimizer = Adam(params, lr=cfg.train_learning_rate, weight_decay=cfg.weight_decay)
+student_nn = Student(base_neural_network, student_target_loss_function, optimizer)
+
 training_set, validation_set=return_dataset(cfg)
 
 training_set_loader = data.DataLoader(training_set)
@@ -93,6 +97,5 @@ validation_set_loader = data.DataLoader(validation_set)
 callbacks = [CollectiveActivityCallback(cfg.log_path)]
 custom_metrics = {'actions_acc': actions_accuracy, 'activities_acc': activities_accuracy}
 
-concordia_network = ConcordiaNetwork(student_nn, teacher_psl, predicate_builder, teacher_student_loss_function, **concordia_config)
-
+concordia_network = ConcordiaNetwork(student_nn, teacher_psl, **concordia_config)
 concordia_network.fit(training_set_loader, validation_set_loader, callbacks=callbacks, metrics=custom_metrics)

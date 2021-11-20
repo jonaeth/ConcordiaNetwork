@@ -1,13 +1,16 @@
 from Experiments.CollectiveActivity.NeuralNetworkModels.utils import *
 import torch.nn as nn
 from Experiments.CollectiveActivity.NeuralNetworkModels.MobileNet import MobileNet
-from roi_align.roi_align import RoIAlign      # RoIAlign module
+from Experiments.CollectiveActivity.NeuralNetworkModels.InceptionNet import MyInception_v3
+from torchvision.ops import roi_align
 import torch
-from Concordia.Student import Student
 import torch.nn.functional as F
 
 
 class BaseNet(nn.Module):
+    """
+    main module of base model for collective dataset
+    """
     def __init__(self, cfg):
         super(BaseNet, self).__init__()
         self.cfg = cfg
@@ -15,14 +18,19 @@ class BaseNet(nn.Module):
         D = self.cfg.emb_features
         K = self.cfg.crop_size[0]
         NFB = self.cfg.num_features_boxes
-        self.backbone = MobileNet(pretrained=True)
+
+        # START: Original code by Zijian and Xinran
+        if cfg.backbone == 'inv3':
+            self.backbone = MyInception_v3(transform_input=False, pretrained=True)
+        elif cfg.backbone == 'mobilenet':
+            self.backbone = MobileNet(pretrained=True)
+        else:
+            assert False
         # END: Original code by Zijian and Xinran
 
         if not self.cfg.train_backbone:
             for p in self.backbone.parameters():
                 p.requires_grad = False
-
-        self.roi_align = RoIAlign(*self.cfg.crop_size)
 
         # START: Original code by Zijian and Xinran
         if cfg.backbone == 'inv3':
@@ -60,7 +68,7 @@ class BaseNet(nn.Module):
 
     def forward(self, batch_data):
         images_in, boxes_in, bboxes_num_in = batch_data
-
+        boxes_in = boxes_in[:, :, :, :4]
         # read config parameters
         B = images_in.shape[0]  # Nr of batches
         T = images_in.shape[1]  # Nr of frames
@@ -96,9 +104,9 @@ class BaseNet(nn.Module):
         # RoI Align
         boxes_in_flat.requires_grad = False
         boxes_idx_flat.requires_grad = False
-        boxes_features_all = self.roi_align(features_multiscale,
-                                            boxes_in_flat,
-                                            boxes_idx_flat)  # B*T*MAX_N, D, K, K,
+        boxes_features_all = roi_align(features_multiscale,
+                                       torch.cat((boxes_idx_flat.reshape(-1, 1), boxes_in_flat), axis=1),
+                                       self.cfg.crop_size)  # B*T*MAX_N, D, K, K,
 
         boxes_features_all = boxes_features_all.reshape(B * T, MAX_N, -1)  # B*T,MAX_N, D*K*K
 

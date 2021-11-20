@@ -5,9 +5,10 @@ concordia_config = {
     # Concordia
     ###################################################################
     'use_teacher_inference_online': True,
-    'train_teacher': True,
+    'train_teacher': False,
     'teacher_training_starting_epoch': 4,
-    'gpu_device': torch.device('cuda', 0),
+    'gpu_device': torch.device('cpu', 0),
+    'image_vector_length': 1280,
     ###################################################################
     # Teacher
     ###################################################################

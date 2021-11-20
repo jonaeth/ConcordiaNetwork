@@ -3,62 +3,66 @@ from tqdm import tqdm
 from collections import defaultdict
 import numpy as np
 from Concordia.torch_losses import kl_divergence
+from Concordia.MixtureOfExperts import MixtureOfExperts
 
 
 class ConcordiaNetwork:
-    def __init__(self, student, teacher, predicate_builder, **config):
+    def __init__(self, student, teacher, **config):
         self.student = student
         self.teacher = teacher
-        self.predicate_builder = predicate_builder
         self.device = config['gpu_device'] if config['gpu_device'] else torch.device('cpu')
         self.config = config
+        self.mixture_of_experts_model = MixtureOfExperts(config['image_vector_length'])
 
-    def fit(self, input_data_loader, val_data_loader, epochs=10, callbacks=None, metrics=None):
+    def fit(self, train_data_loader, val_data_loader, epochs=10, callbacks=None, metrics=None):
+
         for epoch in range(1, epochs+1):
-            batch_metrics = []
-            for input, target in tqdm(input_data_loader):
-                student_prediction = self.student.predict(input)
-                teacher_prediction = self._get_teacher_predictions_online(input, student_prediction, target)
-                loss = self.compute_loss(student_prediction, teacher_prediction, target)
+            batches_metrics = []
+            for input, target in tqdm(train_data_loader):
+                student_prediction = self.student.predict(self._to_device(input))
+                teacher_prediction = self.teacher.predict(self._detach_variables(input),
+                                                          self._detach_variables(student_prediction),
+                                                          self._detach_variables(target))
+
+                loss = self.compute_loss(student_prediction, self._to_device(teacher_prediction), self._to_device(target))
                 self.student.fit(loss)
-                # TODO think how to move the bottom lines somewhere else
-                custom_metrics_batch = self._evaluate_custom_metrics(student_prediction, target, metrics)
-                custom_metrics_batch['loss'] = loss.item()
-                batch_metrics.append(custom_metrics_batch)
-            epoch_log = self._build_epoch_log(batch_metrics, 'Training')
+                #TODO: Consider this to run on GPU
+                batches_metrics.append(self._get_batch_metrics(self._detach_variables(student_prediction), target, metrics, loss.item()))
+
+            epoch_log = self._build_epoch_log(batches_metrics, 'Training')
             self._run_callbacks(callbacks, 'epoch_end', epoch_log, epoch)
-            self._evaluate_the_student(val_data_loader, epoch, callbacks, metrics)
+            self._evaluate_student(val_data_loader, epoch, callbacks, metrics)
 
+    def _detach_variables(self, variables):
+        return [variable.detach().cpu() for variable in variables]
 
-    def _get_teacher_predictions_online(self, input, student_predictions, target):
-        self.predicate_builder.build_predicates(input, student_predictions, target)
-        self.teacher.set_ground_predicates(self.predicate_builder.path_to_save_predicates)
-        self.teacher.fit()
-        teacher_prediction = self.teacher.predict()
-        return teacher_prediction
+    def _to_device(self, variables):
+        if type(variables) != list:
+            return variables.to(device=self.device)
+        return [variable.to(device=self.device) for variable in variables]
 
-    def _evaluate_the_student(self, val_data_loader, epoch, callbacks=None, metrics=None):
-        metrics_per_batch = []
+    def _get_batch_metrics(self, student_predictions, target, metrics, loss):
+        custom_metrics_batch = self._evaluate_custom_metrics(student_predictions, target, metrics)
+        custom_metrics_batch['loss'] = loss
+        return custom_metrics_batch
+
+    def _evaluate_student(self, val_data_loader, epoch, callbacks=None, metrics=None):
+        batches_metrics = []
         for input, target in tqdm(val_data_loader):
             student_prediction = self.student.predict(input)
             loss = self.student.loss_fn(student_prediction, target)
-            custom_metrics_batch = self._evaluate_custom_metrics(student_prediction, target, metrics)
-            custom_metrics_batch['loss'] = loss.item()
-            metrics_per_batch.append(custom_metrics_batch)
-        epoch_log = self._build_epoch_log(metrics_per_batch, 'Test')
+            batches_metrics.append(self._get_batch_metrics(student_prediction, target, metrics, loss.item()))
+        epoch_log = self._build_epoch_log(batches_metrics, 'Test')
         self._run_callbacks(callbacks, 'epoch_end', epoch_log, epoch)
 
-    def _fit_teacher_offline(self, input_loader):
-        pass
-
     # TODO move this to another class potentially, Logging class?
-    def _build_epoch_log(self, metrics_per_batch, evaluation_step):
-        metrics_per_batch_wide = defaultdict(list)
-        for metrics_in_batch in metrics_per_batch:
-            for metric_name, metric_val in metrics_in_batch.items():
-                metrics_per_batch_wide[metric_name].append(metric_val)
+    def _build_epoch_log(self, batches_metrics, evaluation_step):
+        wide_batch_metrics = defaultdict(list)
+        for batch_metrics in batches_metrics:
+            for metric_name, metric_val in batch_metrics.items():
+                wide_batch_metrics[metric_name].append(metric_val)
         logs = {}
-        for metric_name, metric_values_per_batch in metrics_per_batch_wide.items():
+        for metric_name, metric_values_per_batch in wide_batch_metrics.items():
             logs[metric_name] = np.mean(metric_values_per_batch)
         logs['evaluation_step'] = evaluation_step
         return logs
@@ -87,7 +91,7 @@ class ConcordiaNetwork:
         return kl_divergence_loss
 
     def compute_loss(self, student_predictions, teacher_predictions, target_values):
-        return self._get_teacher_student_loss(student_predictions, teacher_predictions) \
-               + self.student.loss_fn(student_predictions, target_values)
+        return 0.5 * self._get_teacher_student_loss(teacher_predictions, student_predictions) \
+               + 0.5 * self.student.loss_fn(student_predictions, target_values)
 
 

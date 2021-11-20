@@ -136,7 +136,7 @@ class CollectiveDataset(data.Dataset):
     """
     Characterize collective dataset for pytorch
     """
-    def __init__(self,anns,frames,images_path,image_size,feature_size,num_boxes=13,num_frames=10,is_training=True,is_finetune=False):
+    def __init__(self,anns,frames,images_path,image_size,feature_size,num_boxes=13,num_frames=10,is_training=True,is_finetune=False, is_gnn=False):
         self.anns=anns
         self.frames=frames
         self.images_path=images_path
@@ -148,6 +148,8 @@ class CollectiveDataset(data.Dataset):
 
         self.is_training=is_training
         self.is_finetune=is_finetune
+        self.is_gnn = is_gnn
+
         self.frames = self.adjust_frames_to_work_with_batches()
         self.build_frame_dataset()
 
@@ -163,19 +165,37 @@ class CollectiveDataset(data.Dataset):
     def build_frame_dataset(self):
         self.frame_dataset = defaultdict(list)
         self.frame_dataset_indexes = []
-        for i in range(len(self.frames)):
-            sequence_id, labled_frame_id = self.frames[i]
-            if len(self.frame_dataset[sequence_id]):
-                if len(self.frame_dataset[sequence_id][-1]) != self.num_frames:
-                    self.frame_dataset[sequence_id][-1].append(labled_frame_id)
+        if self.is_gnn:
+            for j in range(len(self.frames)):
+                if j + self.num_frames >= len(self.frames):
+                    break
+                for i in range(j, j+self.num_frames):
+                    sequence_id, labled_frame_id = self.frames[i]
+                    if len(self.frame_dataset[sequence_id]):
+                        if len(self.frame_dataset[sequence_id][-1]) != self.num_frames:
+                            self.frame_dataset[sequence_id][-1].append(labled_frame_id)
+                        else:
+                            self.frame_dataset[sequence_id].append([labled_frame_id])
+                            self.frame_dataset_indexes.append((sequence_id, len(self.frame_dataset[sequence_id]) - 1))
+                    else:
+                        self.frame_dataset[sequence_id].append([labled_frame_id])
+                        self.frame_dataset_indexes.append((sequence_id, len(self.frame_dataset[sequence_id]) - 1))
+        else:
+            for i in range(len(self.frames)):
+                sequence_id, labled_frame_id = self.frames[i]
+                if len(self.frame_dataset[sequence_id]):
+                    if len(self.frame_dataset[sequence_id][-1]) != self.num_frames:
+                        self.frame_dataset[sequence_id][-1].append(labled_frame_id)
+                    else:
+                        self.frame_dataset[sequence_id].append([labled_frame_id])
+                        self.frame_dataset_indexes.append((sequence_id, len(self.frame_dataset[sequence_id]) - 1))
                 else:
                     self.frame_dataset[sequence_id].append([labled_frame_id])
                     self.frame_dataset_indexes.append((sequence_id, len(self.frame_dataset[sequence_id]) - 1))
-            else:
-                self.frame_dataset[sequence_id].append([labled_frame_id])
-                self.frame_dataset_indexes.append((sequence_id, len(self.frame_dataset[sequence_id]) - 1))
+
 
         pass
+
 
 
 
@@ -192,7 +212,7 @@ class CollectiveDataset(data.Dataset):
 
         select_frames=self.frame_dataset_indexes[index]
 
-        sample_inputs, sample_targets =self.load_samples_sequence(select_frames)
+        sample_inputs, sample_targets=self.load_samples_sequence(select_frames)
 
         return sample_inputs, sample_targets
 
@@ -210,6 +230,8 @@ class CollectiveDataset(data.Dataset):
         activities, actions = [], []
         bboxes_num=[]
         sid = select_frames[0]
+
+        targets = []
 
         for i, fid in enumerate(self.frame_dataset[sid][select_frames[1]]):
 

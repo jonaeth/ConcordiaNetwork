@@ -42,8 +42,8 @@ cfg.use_psl = True
 cfg.train_psl = True
 
 
-cfg.remove_walking=True
-cfg.include_walking=False
+cfg.remove_walking=False
+cfg.include_walking=True
 
 cfg.test_before_train = False
 cfg.start_psl_at_epoch = 1

@@ -9,12 +9,14 @@ import torch
 
 
 class Teacher(ABC):
-    def __init__(self, predicates=None, predicates_to_infer=None):
+    def __init__(self, knowledge_base_factory, predicates=None, predicates_to_infer=None, **config):
+        self.knowledge_base_factory = knowledge_base_factory
         self.predicates_to_infer = predicates_to_infer
         if predicates:
             self.predicates = predicates
         else:
             self.predicates = []
+        self.config = config
 
     def build_model(self):
         pass
@@ -28,17 +30,19 @@ class Teacher(ABC):
     def fit(self):
         pass
 
-    def predict(self):
+    def predict(self, teacher_input, student_predictions, target):
         pass
 
 
 class PSLTeacher(Teacher):
     def __init__(self,
+                 knowledge_base_factory,
                  predicates=None,
                  predicates_to_infer=None,
                  **config):
-        super().__init__(predicates=predicates,
-                         predicates_to_infer=predicates_to_infer)
+        super().__init__(knowledge_base_factory=knowledge_base_factory,
+                         predicates=predicates,
+                         predicates_to_infer=predicates_to_infer, **config)
         if 'cli_options' in config:
             self.cli_options = config['cli_options']
         else:
@@ -78,14 +82,24 @@ class PSLTeacher(Teacher):
                          psl_config=self.psl_options,
                          jvm_options=self.jvm_options)
 
-    def predict(self):
+    def predict(self, teacher_input, student_predictions, target):
+        self.knowledge_base_factory.build_predicates(teacher_input, student_predictions, target)
+        self.set_ground_predicates(self.knowledge_base_factory.path_to_save_predicates)
+
+        if self.config['train_teacher']:
+            self.fit()
+
         results = self.model.infer(additional_cli_optons=self.cli_options, psl_config=self.psl_options)
         predictions = []
         for predicate in self.predicates_to_infer:
             if not predicate:
-                predictions.append([])
+                predictions.append(torch.Tensor([]))
             else:
-                predictions.append(torch.Tensor(results[self.model.get_predicate(predicate)].sort_values(by=[0, 1])))
+                psl_predictions = results[self.model.get_predicate(predicate)]\
+                                                    .sort_values(by=[0, 1])\
+                                                    .pivot(index=0, columns=1, values='truth')\
+                                                    .values
+                predictions.append(torch.Tensor(psl_predictions))
         return predictions
 
     def _add_predicates(self, model, predicate_file):
