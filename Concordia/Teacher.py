@@ -10,9 +10,7 @@ from distutils.util import strtobool
 
 
 class Teacher(ABC):
-    def __init__(self, model_name='model', model=None, predicates=None, predicate_to_infer=None):
-        self.model_name = model_name
-        self.model = model
+    def __init__(self, predicates=None, predicate_to_infer=None):
         self.predicate_to_infer = predicate_to_infer
         if predicates:
             self.predicates = predicates
@@ -37,12 +35,10 @@ class Teacher(ABC):
 
 class PSLTeacher(Teacher):
     def __init__(self,
-                 model_name='model',
-                 model=None,
                  predicates=None,
                  predicate_to_infer=None,
                  **config):
-        super().__init__(model_name=model_name, model=model, predicates=predicates,
+        super().__init__(predicates=predicates,
                          predicate_to_infer=predicate_to_infer)
         if 'cli_options' in config:
             self.cli_options = config['cli_options']
@@ -61,11 +57,13 @@ class PSLTeacher(Teacher):
             self.jvm_options = ['-Xms4096M', '-Xmx12000M']
 
         self.model_path = config['teacher_model_path']
+        self.model = self._build_model()
 
-    def build_model(self):
-        self.model = Model(self.model_name)
-        self._add_predicates(f"{self.model_path}/predicates.psl")
-        self._add_rules(f"{self.model_path}/model.psl")
+    def _build_model(self):
+        model = Model('Teacher')
+        self._add_predicates(model, f"{self.model_path}/predicates.psl")
+        self._add_rules(model, f"{self.model_path}/model.psl")
+        return model
 
     def __str__(self):
         rules = '\n'.join(str(rule) for rule in self.model.get_rules())
@@ -83,10 +81,12 @@ class PSLTeacher(Teacher):
 
     def predict(self):
         results = self.model.infer(additional_cli_optons=self.cli_options, psl_config=self.psl_options)
-        predictions = results[self.model.get_predicate(self.predicate_to_infer)].sort_values(by=[0, 1]) # TODO make [0, 1] automaticly computed by arity
+        # TODO make [0, 1] automaticly computed by arity
+        # Sort results by arguments of predicate to match the predictions to predictions of the neural model
+        predictions = results[self.model.get_predicate(self.predicate_to_infer)].sort_values(by=[0, 1])
         return predictions
 
-    def _add_predicates(self, predicate_file):
+    def _add_predicates(self, model, predicate_file):
         with open(predicate_file, 'r') as p_file:
             for line in p_file.readlines():
                 predicate = line.split('\t')
@@ -94,7 +94,7 @@ class PSLTeacher(Teacher):
                 self.predicates.append(predicate_name)
                 is_closed = strtobool(predicate[1])
                 arity = int(predicate[2])
-                self.model.add_predicate(Predicate(predicate_name, closed=is_closed, size=arity))
+                model.add_predicate(Predicate(predicate_name, closed=is_closed, size=arity))
 
     def set_ground_predicates(self, predicate_folder):
         grounded_predicates = []
@@ -108,14 +108,17 @@ class PSLTeacher(Teacher):
             if predicate not in grounded_predicates:
                 self.model.get_predicate(predicate).clear_data()
             if predicate in observed_predicates:
-                self.model.get_predicate(predicate).add_data_file(Partition.OBSERVATIONS, f'{observations_folder}/{predicate}.psl')
+                self.model.get_predicate(predicate).add_data_file(Partition.OBSERVATIONS,
+                                                                  f'{observations_folder}/{predicate}.psl')
             if predicate in target_predicates:
-                self.model.get_predicate(predicate).add_data_file(Partition.TARGETS, f'{targets_folder}/{predicate}.psl')
+                self.model.get_predicate(predicate).add_data_file(Partition.TARGETS,
+                                                                  f'{targets_folder}/{predicate}.psl')
             if predicate in truth_predicates:
-                self.model.get_predicate(predicate).add_data_file(Partition.TRUTH, f'{truths_folder}/{predicate}.psl')
+                self.model.get_predicate(predicate).add_data_file(Partition.TRUTH,
+                                                                  f'{truths_folder}/{predicate}.psl')
             grounded_predicates.append(predicate)
 
-    def _add_rules(self, rules_file):
+    def _add_rules(self, model, rules_file):
         with open(rules_file, 'r') as r_file:
             for line in r_file.readlines():
                 rule = line.split('\t')
@@ -123,9 +126,9 @@ class PSLTeacher(Teacher):
                 weight = float(rule[1])
                 if weight == -1:
                     weighted = False
-                    self.model.add_rule(Rule(implication, weighted=weighted))
+                    model.add_rule(Rule(implication, weighted=weighted))
                 else:
-                    self.model.add_rule(Rule(implication, weight=weight))
+                    model.add_rule(Rule(implication, weight=weight))
 
 
 class MLNTeacher(Teacher):
