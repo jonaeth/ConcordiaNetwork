@@ -1,8 +1,7 @@
-from abc import ABC
 from torch.optim import Adam
 
 
-class Student(ABC):
+class Student:
     def __init__(self, neural_model, student_loss_function, optimizer=None):
         self.model = neural_model
         self.loss_fn = student_loss_function
@@ -24,6 +23,6 @@ class Student(ABC):
 
     def predict(self, neural_input):
         predictions = self.model(neural_input)
-        return predictions
+        return list(predictions)
 
 

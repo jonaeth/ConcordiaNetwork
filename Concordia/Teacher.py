@@ -9,8 +9,8 @@ import torch
 
 
 class Teacher(ABC):
-    def __init__(self, predicates=None, predicate_to_infer=None):
-        self.predicate_to_infer = predicate_to_infer
+    def __init__(self, predicates=None, predicates_to_infer=None):
+        self.predicates_to_infer = predicates_to_infer
         if predicates:
             self.predicates = predicates
         else:
@@ -35,10 +35,10 @@ class Teacher(ABC):
 class PSLTeacher(Teacher):
     def __init__(self,
                  predicates=None,
-                 predicate_to_infer=None,
+                 predicates_to_infer=None,
                  **config):
         super().__init__(predicates=predicates,
-                         predicate_to_infer=predicate_to_infer)
+                         predicates_to_infer=predicates_to_infer)
         if 'cli_options' in config:
             self.cli_options = config['cli_options']
         else:
@@ -80,10 +80,13 @@ class PSLTeacher(Teacher):
 
     def predict(self):
         results = self.model.infer(additional_cli_optons=self.cli_options, psl_config=self.psl_options)
-        # TODO make [0, 1] automaticly computed by arity
-        # Sort results by arguments of predicate to match the predictions to predictions of the neural model
-        predictions = results[self.model.get_predicate(self.predicate_to_infer)].sort_values(by=[0, 1])
-        return torch.Tensor(predictions)
+        predictions = []
+        for predicate in self.predicates_to_infer:
+            if not predicate:
+                predictions.append([])
+            else:
+                predictions.append(torch.Tensor(results[self.model.get_predicate(predicate)].sort_values(by=[0, 1])))
+        return predictions
 
     def _add_predicates(self, model, predicate_file):
         with open(predicate_file, 'r') as p_file:

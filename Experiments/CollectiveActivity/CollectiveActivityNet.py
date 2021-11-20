@@ -10,7 +10,7 @@ class CollectiveActivityNet(Student):
         self.model.apply(self.set_bn_eval)
         images, bboxes, bboxes_num = input
         actions_scores, activities_scores = self.model((images, bboxes[:, :, :, :-1], bboxes_num))
-        return actions_scores, activities_scores
+        return [actions_scores, activities_scores]
 
     def fit(self, loss):
         self.optimizer.zero_grad()
