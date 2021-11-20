@@ -1,7 +1,5 @@
 from abc import ABC
-from collections import defaultdict
 import os
-import numpy as np
 from pslpython.model import Model
 from pslpython.partition import Partition
 from pslpython.predicate import Predicate
