@@ -3,12 +3,13 @@ from torch.optim import Adam
 
 
 class Student(ABC):
-    def __init__(self, neural_network, optimizer=None):
-        self.model = neural_network
+    def __init__(self, neural_model, student_loss_function, optimizer=None):
+        self.model = neural_model
+        self.loss_fn = student_loss_function
         if optimizer:
             self.optimizer = optimizer
         else:
-            self.optimizer = Adam(self.model.parameters(), lr=0.001)
+            self.optimizer = Adam(self.model.parameters())
 
     def __str__(self):
         pass
@@ -17,30 +18,12 @@ class Student(ABC):
         pass
 
     def fit(self, loss):
-        pass
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
 
-    def predict(self, inputs):
-        pass
+    def predict(self, neural_input):
+        predictions = self.model(neural_input)
+        return predictions
 
-
-class ClassificationStudent(Student):
-    def __init__(self, neural_network, optimizer):
-        super().__init__(neural_network, optimizer)
-
-    def fit(self, loss):
-        pass
-
-    def predict(self):
-        pass
-
-
-class RegressionStudent(Student):
-    def __init__(self):
-        super().__init__()
-
-    def fit(self, loss):
-        pass
-
-    def predict(self):
-        pass
 
