@@ -18,5 +18,6 @@ concordia_config = {
         'votedperceptron.numsteps': '2'
     },
     'cli_options': [],
-    'jvm_options': ['-Xms4096M', '-Xmx12000M']
+    'jvm_options': ['-Xms4096M', '-Xmx12000M'],
+    'teacher_student_distributions_comparison': [True, False]
 }

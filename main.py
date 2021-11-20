@@ -8,7 +8,7 @@ from Experiments.CollectiveActivity.dataset import return_dataset
 from Concordia.ConcordiaNetwork import ConcordiaNetwork
 from torch.utils import data
 import numpy as np
-from Experiments.torch_losses import kl_divergence, cross_entropy
+from Concordia.torch_losses import kl_divergence, cross_entropy
 import torch
 from Experiments.CollectiveActivity.concordia_config import concordia_config
 from Experiments.CollectiveActivity.CollectiveActivityCallback import CollectiveActivityCallback
@@ -93,6 +93,6 @@ validation_set_loader = data.DataLoader(validation_set)
 callbacks = [CollectiveActivityCallback(cfg.log_path)]
 custom_metrics = {'actions_acc': actions_accuracy, 'activities_acc': activities_accuracy}
 
-concordia_network = ConcordiaNetwork(student_nn, teacher_psl, predicate_builder, teacher_student_loss_function, student_target_loss_function, **concordia_config)
+concordia_network = ConcordiaNetwork(student_nn, teacher_psl, predicate_builder, teacher_student_loss_function, **concordia_config)
 
 concordia_network.fit(training_set_loader, validation_set_loader, callbacks=callbacks, metrics=custom_metrics)

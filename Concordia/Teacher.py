@@ -5,6 +5,7 @@ from pslpython.partition import Partition
 from pslpython.predicate import Predicate
 from pslpython.rule import Rule
 from distutils.util import strtobool
+import torch
 
 
 class Teacher(ABC):
@@ -82,7 +83,7 @@ class PSLTeacher(Teacher):
         # TODO make [0, 1] automaticly computed by arity
         # Sort results by arguments of predicate to match the predictions to predictions of the neural model
         predictions = results[self.model.get_predicate(self.predicate_to_infer)].sort_values(by=[0, 1])
-        return predictions
+        return torch.Tensor(predictions)
 
     def _add_predicates(self, model, predicate_file):
         with open(predicate_file, 'r') as p_file:
