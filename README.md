@@ -41,8 +41,6 @@ Inside the `teacher` folder, in addition, you will find a `model` folder, which 
 	/train
 ```
 
-In addition, inside the respective experiment folde, you will find a `data_processing` folder. This folder is not necessary, but can be used to set up the data pre-processing.
-
 Finally, there is a `NeuralNetworkModels` folder containing all the neural models that you might want to use for the student.
 
 
@@ -139,8 +137,6 @@ The `ConcordiaNetwork` has the following methods:
 
 ## Installation and Set-Up
 
-### Environment Set-Up
-
 We recommend to set-up a `conda` environment. The packages that need to be installed for Concordia are:
 
 * `pip install pslpython`
@@ -150,10 +146,6 @@ We recommend to set-up a `conda` environment. The packages that need to be insta
 
 ### See above
 
-### Experiment Set-Up
-
-
-### TODO
 
 ## Experiments
 
@@ -163,4 +155,4 @@ Then, move the data to the following folders:
 
 ### XXX
 
-### TODO: remove unnecessary files, add experiment files, remove todos from code, remove recommendations folder, remove Callback class
+### TODO: remove unnecessary files, add experiment files
