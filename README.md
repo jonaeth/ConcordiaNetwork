@@ -105,6 +105,9 @@ The student has the following methods:
 * `fit` backpropagates the loss to the model, and
 * `predict` which for some input predicts the labels. It outputs the predictions as a loss as several tasks can be given to the neural network. For example, in the collective activity task, the neural model predicts both individual actions as well as group actions.
 
+
+### TODO implement print functions
+
 ## Concordia Network
 
 The `ConcordiaNetwork` class combines the two solvers. Firstly, it takes the predictions of the `Student` and passes them as additional 'observed' variables in the `Teacher`. Secondly, it calculates the difference between the distribution of the predictions of both the `Teacher` and the `Student` and backpropagates this difference as an additional loss to the `Student`. Finally, it combines the predictions of the `Student` and the `Teacher` through a mixture-of-experts model to give a final prediction.
@@ -138,3 +141,33 @@ The `ConcordiaNetwork` has the following methods:
 * The `MixtureOfExperts` class is a simple soft gateing network that combines the predictions of the student and the teacher,
 * `torch_losses.py` contains wrapper functions for loss functions,
 * `Callback`
+
+### See above
+
+## Installation and Set-Up
+
+### Environment Set-Up
+
+We recommend to set-up a `conda` environment. The packages that need to be installed for Concordia are:
+
+* `pip install pslpython`
+* `pip install torch torchvision` (careful to install it with the correct cuda version)
+* `pip install tqdm` 
+
+
+### See above
+
+### Experiment Set-Up
+
+
+### TODO
+
+## Experiments
+
+To run the experiments described in our paper, you will need to download and unzip the [Collective-Activity-Dataset](http://cvgl.stanford.edu/data/ActivityDataset.zip) and the [Augmented Collective Activity Dataset](http://cvgl.stanford.edu/data/ActivityDataset2.tar.gz), as well as the [Target Trajectories](http://cvgl.stanford.edu/data/ActivityTracks.tar.gz).
+
+Then, move the data to the following folders:
+
+### XXX
+
+### TODO: remove unnecessary files, add experiment files, remove todos
