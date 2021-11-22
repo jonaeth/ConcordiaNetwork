@@ -51,7 +51,7 @@ def convert_targets_to_right_shape(targets_actions, targets_activities):
 
 def teacher_student_loss_function(student_predictions, teacher_predictions):
     student_predictions_actions, student_predictions_activities = student_predictions
-    teacher_predictions = np.array([x for x in teacher_predictions[[0, 'truth']].groupby(0).apply(lambda x: np.array(x['truth'])).to_numpy()]) #TODO figure out how to remove the 0 if possible
+    teacher_predictions = np.array([x for x in teacher_predictions[[0, 'truth']].groupby(0).apply(lambda x: np.array(x['truth'])).to_numpy()])
     teacher_predictions = torch.Tensor(teacher_predictions)
     kl_divergnece_loss = kl_divergence(student_predictions_actions, teacher_predictions)
     return kl_divergnece_loss

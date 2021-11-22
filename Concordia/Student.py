@@ -13,10 +13,6 @@ class Student:
     def __str__(self):
         print(self.model)
 
-    # TODO implement function
-    def write_model_to_file(self, file_name):
-        pass
-
     def fit(self, loss):
         self.optimizer.zero_grad()
         loss.backward()

@@ -35,7 +35,6 @@ class MixtureOfExperts(nn.Module):
 
     def compute_loss(self, teacher_prediction, student_prediction, alpha, true_targets):
         softmax = torch.nn.Softmax(dim=1)
-        # TODO change num_classes to num be hardcoded
         mixture_loss = -torch.sum(
             torch.log(alpha * softmax(student_prediction.detach()) +
                       (1 - alpha) * teacher_prediction * one_hot(true_targets.detach(), num_classes=8)))

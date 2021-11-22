@@ -46,12 +46,12 @@ class PSLTeacher(Teacher):
         if 'cli_options' in config:
             self.cli_options = config['cli_options']
         else:
-            self.cli_options = []  # TODO Discuss need
+            self.cli_options = []
         if 'psl_options' in config:
             self.psl_options = config['psl_options']
         else:
             self.psl_options = {
-                'log4j.threshold': 'OFF',  # TODO Discuss good default
+                'log4j.threshold': 'OFF',
                 'votedperceptron.numsteps': '2'
             }
         if 'jvm_options' in config:
@@ -132,7 +132,7 @@ class PSLTeacher(Teacher):
         observed_predicates = [predicate.replace('.psl', '') for predicate in os.listdir(observations_folder)]
         target_predicates = [predicate.replace('.psl', '') for predicate in os.listdir(targets_folder)]
         truth_predicates = [predicate.replace('.psl', '') for predicate in os.listdir(truths_folder)]
-        for predicate in self.predicates:  # TODO Change logic. Loop folders instead
+        for predicate in self.predicates:
             if predicate not in grounded_predicates:
                 self.model.get_predicate(predicate).clear_data()
             if predicate in observed_predicates:
