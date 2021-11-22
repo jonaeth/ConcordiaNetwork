@@ -1,10 +1,12 @@
 # Concordia - a neuro-symbolic framework
 
-Concordia is a neuro-symbolci architecture that combines lifted graphical models and neural networks. The goal is to distill additional knowledge into a neural network in the form of rules. Concordia consists of three main parts, which are coded into classes:
+Concordia is a neuro-symbolic architecture that combines lifted graphical models and neural networks. The goal is to distill additional knowledge into a neural network in the form of rules. Concordia consists of three main parts, which are coded into classes:
 
 1. [Teacher](#Teacher) - the lifted graphical model. So far, we have implemented only Probabilistic Soft Lofic (PSL) models, however, it can easily extended to other lifted graphical models such as Markov Logic Networks (MLNs).
 2. [Student](#Student) - the neural model. This can be any type of Deep Neural Network and the architecture has been developed for easy integration of different models. So far, only classification tasks has been tested, but regression is an easy extension.
 3. [Concordia Network](#Concordia-Network) - the main class that takes the outputs of each individual solver backpropagates their output respectively to the other and combines the outputs through a mixture-of-experts approach to give a unified prediction.
+
+![Alt text](Concordia.png "Concordia Architecture")
 
 ## Content
 
@@ -49,6 +51,8 @@ Finally, there is a `NeuralNetworkModels` folder containing all the neural model
 
 The `Teacher` class is a wrapper class for a lifted graphical model it is an abstract class allowing in the future to implement several instances of teachers. So far, we have implemented a `PSLTeacher`. 
 
+### Useage
+
 The `Teacher` has the following form
 
 ```
@@ -62,6 +66,7 @@ where
 - `predicates_to_infer` are the predicates that the overarching architecture is interested in inferring, and
 - `**config` is a configuration file, which typically is the same as for the whole architecture.
 
+### Methods
 
 The `Teacher` class has the following methods:
 
@@ -75,11 +80,31 @@ The `Teacher` class has the following methods:
 
 The `Student` class is a very simple wrapper class for any neural model.
 
+### Useage
+
+The `Student` is instantiated the following way
+
 ```
 Student(neural_model, student_loss_function, optimizer)
 ```
 
+where
+
+- `neural_model` is a neural model object that you can specify,
+- `student_loss_function` is the function that the model should use to calculate the loss between its predictions and the true labels, and
+- `optimizer` is an optimizer of your choice. By default we set it to Adam with its default values.
+
 It is instantiated with a neural model of your choice. We have provided a couple of neural models, which you can find in `/Experiments/CollectiveActivity/NeuralNetworkModel`. Those are taken from the [Improved Actor Relation Graph based Group Activity Recognition](https://github.com/kuangzijian/Improved-Actor-Relation-Graph-based-Group-Activity-Recognition) repo.
+
+### Methods
+
+The student has the following methods:
+
+* `__str__` which prints the model to the terminal,
+* `write_model_to_file` which prints the model to a specified file,
+* `fit` backpropagates the loss to the model, and
+* `predict` which for some input predicts the labels. It outputs the predictions as a loss as several tasks can be given to the neural network. For example, in the collective activity task, the neural model predicts both individual actions as well as group actions.
+
 ## Concordia-Network
 
 The $ConcordiaNetwork class combines the two solvers. Firstly, it takes the outputs of the 
