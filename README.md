@@ -109,7 +109,7 @@ The student has the following methods:
 
 The `ConcordiaNetwork` class combines the two solvers. Firstly, it takes the predictions of the `Student` and passes them as additional 'observed' variables in the `Teacher`. Secondly, it calculates the difference between the distribution of the predictions of both the `Teacher` and the `Student` and backpropagates this difference as an additional loss to the `Student`. Finally, it combines the predictions of the `Student` and the `Teacher` through a mixture-of-experts model to give a final prediction.
 
-## Useage
+### Useage
 
 The `ConcordiaNetwork` is instantiated the following way
 
@@ -117,7 +117,7 @@ The `ConcordiaNetwork` is instantiated the following way
 ConcordiaNetwork(student, teacher, **config)
 ```
 
-## Methods
+### Methods
 
 The `ConcordiaNetwork` has the following methods:
 
@@ -132,3 +132,9 @@ The `ConcordiaNetwork` has the following methods:
 * `_build_epoch_log` creates a log for each epoch, printing the metrics to the terminal
 * `_run_callbacks`
 * `_evaluate_custom_metrics`
+
+## Additional Files
+
+### Mixture of Experts
+
+The `MixtureOfExperts` class is a simple soft gateing network that combines the predictions of the student and the teacher: ![equation](<img src="https://bit.ly/3oPzr22" align="center" border="0" alt="P(\vec{Y}|X_{\mathcal{N}}, X_{\mathcal{L}}^o, \lambda, \theta) = \alpha(X_{\mathcal{N}}) P_{\mathcal{N}}(\vec{Y}|X_{\mathcal{N}}, \theta) + \nonumber (1-\alpha(X_{\mathcal{N}}))P_{\mathcal{L}}(\vec{Y}|X_{\mathcal{L}}^o, \lambda)" width="515" height="25" />)
