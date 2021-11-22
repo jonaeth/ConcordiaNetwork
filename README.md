@@ -137,4 +137,4 @@ The `ConcordiaNetwork` has the following methods:
 
 ### Mixture of Experts
 
-The `MixtureOfExperts` class is a simple soft gateing network that combines the predictions of the student and the teacher: ![equation](<img src="https://bit.ly/3oPzr22" align="center" border="0" alt="P(\vec{Y}|X_{\mathcal{N}}, X_{\mathcal{L}}^o, \lambda, \theta) = \alpha(X_{\mathcal{N}}) P_{\mathcal{N}}(\vec{Y}|X_{\mathcal{N}}, \theta) + \nonumber (1-\alpha(X_{\mathcal{N}}))P_{\mathcal{L}}(\vec{Y}|X_{\mathcal{L}}^o, \lambda)" width="515" height="25" />)
+The `MixtureOfExperts` class is a simple soft gateing network that combines the predictions of the student and the teacher: ![equation](http://www.sciweavers.org/tex2img.php?eq=P%28%5Cvec%7BY%7D%7CX_%7B%5Cmathcal%7BN%7D%7D%2C%20X_%7B%5Cmathcal%7BL%7D%7D%5Eo%2C%20%5Clambda%2C%20%5Ctheta%29%20%3D%20%5Calpha%28X_%7B%5Cmathcal%7BN%7D%7D%29%20P_%7B%5Cmathcal%7BN%7D%7D%28%5Cvec%7BY%7D%7CX_%7B%5Cmathcal%7BN%7D%7D%2C%20%5Ctheta%29%20%2B%20%5Cnonumber%20%281-%5Calpha%28X_%7B%5Cmathcal%7BN%7D%7D%29%29P_%7B%5Cmathcal%7BL%7D%7D%28%5Cvec%7BY%7D%7CX_%7B%5Cmathcal%7BL%7D%7D%5Eo%2C%20%5Clambda%29&bc=White&fc=Black&im=jpg&fs=12&ff=arev&edit=0)
