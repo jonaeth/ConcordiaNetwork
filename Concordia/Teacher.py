@@ -68,6 +68,28 @@ class PSLTeacher(Teacher):
         self._add_rules(model, f"{self.model_path}/model.psl")
         return model
 
+    def _add_predicates(self, model, predicate_file):
+        with open(predicate_file, 'r') as p_file:
+            for line in p_file.readlines():
+                predicate = line.split('\t')
+                predicate_name = predicate[0]
+                self.predicates.append(predicate_name)
+                is_closed = strtobool(predicate[1])
+                arity = int(predicate[2])
+                model.add_predicate(Predicate(predicate_name, closed=is_closed, size=arity))
+
+    def _add_rules(self, model, rules_file):
+        with open(rules_file, 'r') as r_file:
+            for line in r_file.readlines():
+                rule = line.split('\t')
+                implication = rule[0]
+                weight = float(rule[1])
+                if weight == -1:
+                    weighted = False
+                    model.add_rule(Rule(implication, weighted=weighted))
+                else:
+                    model.add_rule(Rule(implication, weight=weight))
+
     def __str__(self):
         rules = '\n'.join(str(rule) for rule in self.model.get_rules())
         return rules
@@ -102,16 +124,6 @@ class PSLTeacher(Teacher):
                 predictions.append(torch.Tensor(psl_predictions))
         return predictions
 
-    def _add_predicates(self, model, predicate_file):
-        with open(predicate_file, 'r') as p_file:
-            for line in p_file.readlines():
-                predicate = line.split('\t')
-                predicate_name = predicate[0]
-                self.predicates.append(predicate_name)
-                is_closed = strtobool(predicate[1])
-                arity = int(predicate[2])
-                model.add_predicate(Predicate(predicate_name, closed=is_closed, size=arity))
-
     def set_ground_predicates(self, predicate_folder):
         grounded_predicates = []
         observations_folder = f'{predicate_folder}/observations/'
@@ -134,17 +146,7 @@ class PSLTeacher(Teacher):
                                                                   f'{truths_folder}/{predicate}.psl')
             grounded_predicates.append(predicate)
 
-    def _add_rules(self, model, rules_file):
-        with open(rules_file, 'r') as r_file:
-            for line in r_file.readlines():
-                rule = line.split('\t')
-                implication = rule[0]
-                weight = float(rule[1])
-                if weight == -1:
-                    weighted = False
-                    model.add_rule(Rule(implication, weighted=weighted))
-                else:
-                    model.add_rule(Rule(implication, weight=weight))
+
 
 
 class MLNTeacher(Teacher):

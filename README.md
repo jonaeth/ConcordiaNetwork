@@ -28,15 +28,15 @@ Inside the `teacher` folder, in addition, you will find a `model` folder, which 
 
 ```
 /data
-	/student
-		/test
-		/train
-	/teacher
-		/model
-			.model.psl
-			.predicates.psl
-		/test
-		/train
+  /student
+	/test
+	/train
+  /teacher
+	/model
+	  .model.psl
+	  .predicates.psl
+	/test
+	/train
 ```
 
 In addition, inside the respective experiment folde, you will find a `data_processing` folder. This folder is not necessary, but can be used to set up the data pre-processing.
@@ -63,6 +63,23 @@ where
 - `**config` is a configuration file, which typically is the same as for the whole architecture.
 
 
+The `Teacher` class has the following methods:
+
+* `_build_model` used during instantion of a Teacher to create the model from the `model.psl` and `predicates.psl` file. These files are expected to be found in `/Experiments/{Experiment}/teacher/model/`.
+* `__str__` allows for the useage of `print(Teacher)` printing the model to the terminal.
+* `write_model_to_file` prints the rules and their weights to a specified file.
+* `fit` trains the weights of the rules
+* `predict` predicts all unknown variables and then returns the variables of interest as specified in the instantiation.
+
+## Student
+
+The `Student` class is a very simple wrapper class for any neural model.
+
+```
+Student(neural_model, student_loss_function, optimizer)
+```
+
+It is instantiated with a neural model of your choice. We have provided a couple of neural models, which you can find in `/Experiments/CollectiveActivity/NeuralNetworkModel`. Those are taken from the [Improved Actor Relation Graph based Group Activity Recognition](https://github.com/kuangzijian/Improved-Actor-Relation-Graph-based-Group-Activity-Recognition) repo.
 ## Concordia-Network
 
 The $ConcordiaNetwork class combines the two solvers. Firstly, it takes the outputs of the 
