@@ -33,6 +33,21 @@ class ConcordiaNetwork:
             self._run_callbacks(callbacks, 'epoch_end', epoch_log, epoch)
             self._evaluate_student(val_data_loader, epoch, callbacks, metrics)
 
+    def predict(self):
+        pass
+
+    def compute_loss(self, student_predictions, teacher_predictions, target_values):
+        return 0.5 * self._get_teacher_student_loss(teacher_predictions, student_predictions) \
+               + 0.5 * self.student.loss_fn(student_predictions, target_values)
+
+    def _get_teacher_student_loss(self, teacher_predictions, student_predictions):
+        kl_divergence_loss = 0
+        for task_index, do_comparison in enumerate(self.config['teacher_student_distributions_comparison']):
+            if do_comparison:
+                kl_divergence_loss += kl_divergence(student_predictions[task_index],
+                                                    teacher_predictions[task_index])
+        return kl_divergence_loss
+
     def _detach_variables(self, variables):
         return [variable.detach().cpu() for variable in variables]
 
@@ -78,20 +93,3 @@ class ConcordiaNetwork:
             val = metric_fn(student_predictions, targets)
             metric_results[metric_name] = val
         return metric_results
-
-    def predict(self):
-        pass
-
-    def _get_teacher_student_loss(self, teacher_predictions, student_predictions):
-        kl_divergence_loss = 0
-        for task_index, do_comparison in enumerate(self.config['teacher_student_distributions_comparison']):
-            if do_comparison:
-                kl_divergence_loss += kl_divergence(student_predictions[task_index],
-                                                    teacher_predictions[task_index])
-        return kl_divergence_loss
-
-    def compute_loss(self, student_predictions, teacher_predictions, target_values):
-        return 0.5 * self._get_teacher_student_loss(teacher_predictions, student_predictions) \
-               + 0.5 * self.student.loss_fn(student_predictions, target_values)
-
-

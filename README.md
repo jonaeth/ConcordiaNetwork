@@ -100,11 +100,35 @@ It is instantiated with a neural model of your choice. We have provided a couple
 
 The student has the following methods:
 
-* `__str__` which prints the model to the terminal,
+* `__str__` allows for the useage of `print(Student)` printing the model to the terminal,
 * `write_model_to_file` which prints the model to a specified file,
 * `fit` backpropagates the loss to the model, and
 * `predict` which for some input predicts the labels. It outputs the predictions as a loss as several tasks can be given to the neural network. For example, in the collective activity task, the neural model predicts both individual actions as well as group actions.
 
-## Concordia-Network
+## Concordia Network
 
-The $ConcordiaNetwork class combines the two solvers. Firstly, it takes the outputs of the 
+The `ConcordiaNetwork` class combines the two solvers. Firstly, it takes the predictions of the `Student` and passes them as additional 'observed' variables in the `Teacher`. Secondly, it calculates the difference between the distribution of the predictions of both the `Teacher` and the `Student` and backpropagates this difference as an additional loss to the `Student`. Finally, it combines the predictions of the `Student` and the `Teacher` through a mixture-of-experts model to give a final prediction.
+
+## Useage
+
+The `ConcordiaNetwork` is instantiated the following way
+
+```
+ConcordiaNetwork(student, teacher, **config)
+```
+
+## Methods
+
+The `ConcordiaNetwork` has the following methods:
+
+* `fit(train_data_loader, val_data_loader, epochs, callbacks, metrics)` fitting both the student and the teacher and the gateing network acting as a mixture-of-experts,
+* `predict` predicting the final output through a mixture-of-experts,
+* `compute_loss` calculates the final loss for the student, combining the KL divergence between the distributions and the loss of the student between its predictions and the actual labels,
+* `_get_teacher_student_loss` a wrapper function computing the KL divergence between the distributions of the teacher and the student,
+* `_detach_variables` detaching variables from the CPU when GPU computation is enabled, as the current PSL implementation runs on CPUs,
+* `_to_device` puts the tensors onto the main device used (gpu or cpu),
+* `_get_batch_metrics` computes the metrics defined by the user for a batch
+* `_evaluate_student` evaluates how well the student does, used at each epoch
+* `_build_epoch_log` creates a log for each epoch, printing the metrics to the terminal
+* `_run_callbacks`
+* `_evaluate_custom_metrics`
