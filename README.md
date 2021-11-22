@@ -101,12 +101,8 @@ It is instantiated with a neural model of your choice. We have provided a couple
 The student has the following methods:
 
 * `__str__` allows for the useage of `print(Student)` printing the model to the terminal,
-* `write_model_to_file` which prints the model to a specified file,
 * `fit` backpropagates the loss to the model, and
 * `predict` which for some input predicts the labels. It outputs the predictions as a loss as several tasks can be given to the neural network. For example, in the collective activity task, the neural model predicts both individual actions as well as group actions.
-
-
-### TODO implement print functions
 
 ## Concordia Network
 
@@ -130,19 +126,16 @@ The `ConcordiaNetwork` has the following methods:
 * `_get_teacher_student_loss` a wrapper function computing the KL divergence between the distributions of the teacher and the student,
 * `_detach_variables` detaching variables from the CPU when GPU computation is enabled, as the current PSL implementation runs on CPUs,
 * `_to_device` puts the tensors onto the main device used (gpu or cpu),
-* `_get_batch_metrics` computes the metrics defined by the user for a batch
-* `_evaluate_student` evaluates how well the student does, used at each epoch
-* `_build_epoch_log` creates a log for each epoch, printing the metrics to the terminal
-* `_run_callbacks`
-* `_evaluate_custom_metrics`
+* `_get_batch_metrics` computes the metrics defined by the user for a batch,
+* `_evaluate_student` evaluates how well the student does, used at each epoch,
+* `_build_epoch_log` creates a log for each epoch, printing the metrics to the terminal,
+* `_run_callbacks` allows to run specific functions at a desired time during training. In our implementation we use it to print the epoch log, and
+* `_evaluate_custom_metrics` computes a set of user-defined metrics.
 
 ## Additional Files
 
 * The `MixtureOfExperts` class is a simple soft gateing network that combines the predictions of the student and the teacher,
 * `torch_losses.py` contains wrapper functions for loss functions,
-* `Callback`
-
-### See above
 
 ## Installation and Set-Up
 
@@ -170,4 +163,4 @@ Then, move the data to the following folders:
 
 ### XXX
 
-### TODO: remove unnecessary files, add experiment files, remove todos from code, remove recommendations folder
+### TODO: remove unnecessary files, add experiment files, remove todos from code, remove recommendations folder, remove Callback class

@@ -1,6 +1,5 @@
 from Concordia.Teacher import PSLTeacher
 from Concordia.Student import Student
-from Experiments.CollectiveActivity.CollectiveActivityNet import CollectiveActivityNet
 from Experiments.CollectiveActivity.NeuralNetworkModels.BaseNet import BaseNet
 from torch.optim import Adam
 from Experiments.CollectiveActivity.PredicateBuilder import PredicateBuilder

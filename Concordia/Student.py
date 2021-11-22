@@ -11,8 +11,9 @@ class Student:
             self.optimizer = Adam(self.model.parameters())
 
     def __str__(self):
-        pass
+        print(self.model)
 
+    # TODO implement function
     def write_model_to_file(self, file_name):
         pass
 
