@@ -170,4 +170,4 @@ Then, move the data to the following folders:
 
 ### XXX
 
-### TODO: remove unnecessary files, add experiment files, remove todos
+### TODO: remove unnecessary files, add experiment files, remove todos from code, remove recommendations folder
