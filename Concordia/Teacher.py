@@ -106,7 +106,7 @@ class PSLTeacher(Teacher):
 
     def predict(self, teacher_input, student_predictions, target):
         self.knowledge_base_factory.build_predicates(teacher_input, student_predictions, target)
-        self.set_ground_predicates(self.knowledge_base_factory.path_to_save_predicates)
+        self._set_ground_predicates(self.knowledge_base_factory.path_to_save_predicates)
 
         if self.config['train_teacher']:
             self.fit()
@@ -124,7 +124,7 @@ class PSLTeacher(Teacher):
                 predictions.append(torch.Tensor(psl_predictions))
         return predictions
 
-    def set_ground_predicates(self, predicate_folder):
+    def _set_ground_predicates(self, predicate_folder):
         grounded_predicates = []
         observations_folder = f'{predicate_folder}/observations/'
         targets_folder = f'{predicate_folder}/targets/'
