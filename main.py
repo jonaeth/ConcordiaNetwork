@@ -1,16 +1,20 @@
+import torch
+from torch.utils import data
+from torch.optim import Adam
+import argparse
+
 from Concordia.Teacher import PSLTeacher
 from Concordia.Student import Student
-from Experiments.CollectiveActivity.NeuralNetworkModels.BaseNet import BaseNet
-from torch.optim import Adam
-from Experiments.CollectiveActivity.PredicateBuilder import PredicateBuilder
-from Experiments.CollectiveActivity.config_experiment1 import cfg
-from Experiments.CollectiveActivity.dataset import return_dataset
 from Concordia.ConcordiaNetwork import ConcordiaNetwork
-from torch.utils import data
 from Concordia.torch_losses import cross_entropy
-import torch
-from Experiments.CollectiveActivity.concordia_config import concordia_config
+
+from Experiments.CollectiveActivity.NeuralNetworkModels.BaseNet import BaseNet
+from Experiments.CollectiveActivity.PredicateBuilder import PredicateBuilder
+from Experiments.CollectiveActivity.dataset import return_dataset
+from Experiments.CollectiveActivity.config_concordia import config_concordia
 from Experiments.CollectiveActivity.CollectiveActivityCallback import CollectiveActivityCallback
+from Experiments.CollectiveActivity.config_mobilenet_concordia import cfg as cfg_mobile
+from Experiments.CollectiveActivity.config_inception_concordia import cfg as cfg_inception
 
 
 def convert_targets_to_right_shape(targets_actions, targets_activities):
@@ -25,7 +29,8 @@ def convert_targets_to_right_shape(targets_actions, targets_activities):
     targets_actions_nopad = []
     for b in range(batch_size):
         actions_of_batch = []
-        number_of_bboxes_per_frame = [len([action for action in frame if action != -1]) for frame in targets_actions[b].tolist()]
+        number_of_bboxes_per_frame = [len([action for action in frame if action != -1]) for frame in
+                                      targets_actions[b].tolist()]
         for i, N in enumerate(number_of_bboxes_per_frame):
             targets_actions_nopad.append(targets_actions[b][i, :N])
             actions_of_batch.append(targets_actions[b][i, :N])
@@ -36,11 +41,14 @@ def convert_targets_to_right_shape(targets_actions, targets_activities):
 
     return targets_actions, targets_activities
 
+
 def student_target_loss_function(student_predictions, targets):
     student_predictions_actions, student_predictions_activities = student_predictions
     target_actions, target_activities = targets
     target_actions, target_activities = convert_targets_to_right_shape(target_actions, target_activities)
-    return cross_entropy(student_predictions_actions, target_actions) + cross_entropy(student_predictions_activities, target_activities)
+    return cross_entropy(student_predictions_actions, target_actions) + cross_entropy(student_predictions_activities,
+                                                                                      target_activities)
+
 
 def actions_accuracy(student_predictions, targets):
     student_predictions_actions, _ = student_predictions
@@ -50,6 +58,7 @@ def actions_accuracy(student_predictions, targets):
     actions_accuracy = actions_correct.item() / student_predictions_actions.shape[0]
     return actions_accuracy
 
+
 def activities_accuracy(student_predictions, targets):
     _, student_predictions_activities = student_predictions
     _, target_activities = convert_targets_to_right_shape(*targets)
@@ -58,33 +67,44 @@ def activities_accuracy(student_predictions, targets):
     activities_accuracy = activities_correct.item() / student_predictions_activities.shape[0]
     return activities_accuracy
 
-# Teacher
-predicate_file = 'Experiments/CollectiveActivity/data/teacher/model/predicates.psl'
-rule_file = 'Experiments/CollectiveActivity/data/teacher/model/model.psl'
-train_predicate_folder = 'Experiments/CollectiveActivity/data/teacher/train'
-path_to_save_predicates = 'Experiments/CollectiveActivity/data/teacher/train'
 
-knowledge_base_factory = PredicateBuilder(path_to_save_predicates, cfg)
+def main(model):
 
-teacher_psl = PSLTeacher(predicates_to_infer=['DOING', None], knowledge_base_factory=knowledge_base_factory, **concordia_config)
-teacher_psl.build_model()
+    if model == 'mobilenet':
+        cfg = cfg_mobile
+    else:
+        cfg = cfg_inception
+    # Teacher
+    path_to_save_predicates = 'Experiments/CollectiveActivity/data/teacher/train'
+    knowledge_base_factory = PredicateBuilder(path_to_save_predicates, cfg)
+    teacher_psl = PSLTeacher(predicates_to_infer=['DOING', None],
+                             knowledge_base_factory=knowledge_base_factory,
+                             **config_concordia)
+    teacher_psl.build_model()
 
-# Student
-cfg.backbone='mobilenet'
-cfg.backbone='inv3'
-base_neural_network = BaseNet(cfg)
+    # Student
+    base_neural_network = BaseNet(cfg)
+    params = list(filter(lambda p: p.requires_grad, base_neural_network.parameters()))
+    optimizer = Adam(params, lr=cfg.train_learning_rate, weight_decay=cfg.weight_decay)
+    student_nn = Student(base_neural_network, student_target_loss_function, optimizer)
 
-params = list(filter(lambda p: p.requires_grad, base_neural_network.parameters()))
-optimizer = Adam(params, lr=cfg.train_learning_rate, weight_decay=cfg.weight_decay)
-student_nn = Student(base_neural_network, student_target_loss_function, optimizer)
+    # Data
+    training_set, validation_set = return_dataset(cfg)
 
-# Data
-training_set, validation_set = return_dataset(cfg)
+    # Setting metrics to be evaluated during Training and Testing
+    callbacks = [CollectiveActivityCallback(cfg.log_path)]
+    custom_metrics = {'actions_acc': actions_accuracy, 'activities_acc': activities_accuracy}
 
-# Setting metrics to be evaluated during Training and Testing
-callbacks = [CollectiveActivityCallback(cfg.log_path)]
-custom_metrics = {'actions_acc': actions_accuracy, 'activities_acc': activities_accuracy}
+    concordia_network = ConcordiaNetwork(student_nn, teacher_psl, **config_concordia)
+    concordia_network.fit(data.DataLoader(training_set),
+                          data.DataLoader(validation_set),
+                          callbacks=callbacks,
+                          metrics=custom_metrics)
 
 
-concordia_network = ConcordiaNetwork(student_nn, teacher_psl, **concordia_config)
-concordia_network.fit(data.DataLoader(training_set), data.DataLoader(validation_set), callbacks=callbacks, metrics=custom_metrics)
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Collective Activity Detection using Concordia')
+    parser.add_argument('--model', required=True)
+    parser.add_argument('--device', required=True)
+    args = parser.parse_args()
+    main(model=args.model)
