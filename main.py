@@ -2,7 +2,6 @@ from torch.utils import data
 from torch.optim import Adam
 import argparse
 import sys
-sys.path.append(".")
 
 from Concordia.Teacher import PSLTeacher
 from Concordia.Student import Student
@@ -16,8 +15,11 @@ from Experiments.CollectiveActivity.config_concordia import config_concordia
 from Experiments.CollectiveActivity.CollectiveActivityCallback import CollectiveActivityCallback
 from Experiments.CollectiveActivity.CAD_metrics_and_loss import *
 
+sys.path.append(".")
+
 
 def main(backbone, use_gpu, gpu_id):
+    # Set up config
     cfg = Config('collective')
     cfg.init_config('Experiments/CollectiveActivity/result/')
     if backbone == 'mobilenet':
