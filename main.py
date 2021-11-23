@@ -2,18 +2,19 @@ import torch
 from torch.utils import data
 from torch.optim import Adam
 import argparse
-
+import sys
+sys.path.append(".")
 from Concordia.Teacher import PSLTeacher
 from Concordia.Student import Student
 from Concordia.ConcordiaNetwork import ConcordiaNetwork
 from Concordia.torch_losses import cross_entropy
 
+from Experiments.CollectiveActivity.config import Config
 from Experiments.CollectiveActivity.NeuralNetworkModels.BaseNet import BaseNet
 from Experiments.CollectiveActivity.KnowledgeBaseFactory import KnowledgeBaseFactory
-from Experiments.CollectiveActivity.dataset import return_dataset
+from Experiments.CollectiveActivity.collective import return_dataset
 from Experiments.CollectiveActivity.config_concordia import config_concordia
 from Experiments.CollectiveActivity.CollectiveActivityCallback import CollectiveActivityCallback
-from Experiments.CollectiveActivity.config_cad_concordia import cfg
 
 
 def convert_targets_to_right_shape(targets_actions, targets_activities):
@@ -68,13 +69,16 @@ def activities_accuracy(student_predictions, targets):
 
 
 def main(backbone, use_gpu, gpu_id):
-
+    cfg = Config('collective')
+    cfg.init_config('Experiments/CollectiveActivity/result/')
     if backbone == 'mobilenet':
         cfg.backbone = 'mobilenet'
     else:
         cfg.backbone = 'inv3'
 
-    cfg.use_gpu=use_gpu
+    cfg.exp_note = 'Collective_train_' + backbone
+    cfg.use_gpu = use_gpu
+
     # Teacher
     path_to_save_predicates = 'Experiments/CollectiveActivity/data/teacher/train'
     knowledge_base_factory = KnowledgeBaseFactory(path_to_save_predicates, cfg)

@@ -8,22 +8,20 @@ class Config(object):
     """
     def __init__(self, dataset_name):
         # Global
-        self.image_size = 720, 1280  # input image size
-        self.batch_size = 32  # train batch size
-        self.test_batch_size = 8  # test batch size
-        self.num_boxes = 12  # max number of bounding boxes in each frame
+        self.image_size = 480, 720  # input image size
+        self.batch_size = 1  # train batch size
+        self.test_batch_size = 1  # test batch size
+        self.num_boxes = 13  # max number of bounding boxes in each frame
 
-        self.use_psl = True
-
-        self.imitation_param_learning_method = ''  # ['constant', 'decaying']
+        self.imitation_param_learning_method = 'decaying'  # ['constant', 'decaying']
         self.decay_rate = 0.05
         # self.imitation_param -= self.decay_rate
-        self.initial_imitation_rate = 0.8
+        self.initial_imitation_rate = 0.2
 
         # Gpu
         self.use_gpu = False
         self.use_multi_gpu = False
-        self.device_list = "0,1"  # id list of gpus used for training
+        self.device_list = "0,1"  # id list of gpus used for training # TODO
 
         # Dataset
         assert (dataset_name in ['collective'])
@@ -40,8 +38,8 @@ class Config(object):
         # END: Original code by Zijian and Xinran
 
         self.crop_size = 5, 5  # crop size of roi align
-        self.train_backbone = False  # if freeze the feature extraction part of network, True for stage 1, False for stage 2
-        self.out_size = 87, 157  # output feature map size of backbone
+        self.train_backbone = True  # if freeze the feature extraction part of network, True for stage 1, False for stage 2
+        self.out_size = 57,87  # output feature map size of backbone
         self.emb_features = 1056  # output feature map channel of backbone
 
         # Activity Action
@@ -51,7 +49,7 @@ class Config(object):
         self.actions_weights = None
 
         # Sample
-        self.num_frames = 3
+        self.num_frames = 4
         self.num_before = 5
         self.num_after = 4
 
@@ -70,25 +68,25 @@ class Config(object):
 
         # Training Parameters
         self.train_random_seed = 0
-        self.train_learning_rate = 2e-4  # initial learning rate
+        self.train_learning_rate = 1e-5  # initial learning rate
         self.lr_plan = {41: 1e-4, 81: 5e-5, 121: 1e-5}  # change learning rate in these epochs
-        self.train_dropout_prob = 0.3  # dropout probability
-        self.weight_decay = 0  # l2 weight decay
+        self.train_dropout_prob = 0.5  # dropout probability
+        self.weight_decay = 1e-2  # l2 weight decay
 
-        self.max_epoch = 150  # max training epoch
-        self.test_interval_epoch = 2
+        self.max_epoch = 50  # max training epoch
+        self.test_interval_epoch = 1
 
         # Exp
         self.training_stage = 1  # specify stage1 or stage2
         self.stage1_model_path = 'result/stage1_inv3_90.91%.pth'  # path of the base model, need to be set in stage2
         self.stage2_model_path = 'result/stage2_epoch84_90.65%.pth'  # path of the gcn model, need to be set in stage3
         self.test_before_train = False
-        self.exp_note = 'Group-Activity-Recognition'
+        self.exp_note = 'Collective_train_' + self.backbone
         self.exp_name = None
 
         # Our experiments
         self.use_psl = False
-        self.train_psl = True
+        self.train_psl = False
         self.start_psl_at_epoch = 5
 
         self.remove_walking = False
