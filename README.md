@@ -137,12 +137,13 @@ The `ConcordiaNetwork` has the following methods:
 
 ## Installation and Set-Up
 
-We recommend to set-up a `conda` environment. The packages that need to be installed for Concordia are:
+We recommend to set-up a `conda` environment. The packages that need to be installed are in `requirements_concordia.py`. Run:
 
-* `pip install pslpython`
-* `pip install torch torchvision` (careful to install it with the correct cuda version)
-* `pip install tqdm` 
+```
+$ pip install -r requirements_concordia.py
+```
 
+Then, install `torch==1.10.0` and `torchvision=0.11.1` according to your local cuda setting. You can find the right command on [pytorch](https://pytorch.org/get-started/locally/).
 
 ### See above
 
@@ -154,5 +155,11 @@ To run the experiments described in our paper, you will need to download and unz
 Then, move the data to the following folders:
 
 ### XXX
+
+For the Collective-Activity-Dataset, you will need to install a couple of additional libraries, which we have put in `requirements_cad.py`. Run:
+
+```
+$ pip install -r requirements_cad.py
+```
 
 ### TODO: remove unnecessary files, add experiment files
