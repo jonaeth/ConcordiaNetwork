@@ -13,8 +13,7 @@ from Experiments.CollectiveActivity.PredicateBuilder import PredicateBuilder
 from Experiments.CollectiveActivity.dataset import return_dataset
 from Experiments.CollectiveActivity.config_concordia import config_concordia
 from Experiments.CollectiveActivity.CollectiveActivityCallback import CollectiveActivityCallback
-from Experiments.CollectiveActivity.config_mobilenet_concordia import cfg as cfg_mobile
-from Experiments.CollectiveActivity.config_inception_concordia import cfg as cfg_inception
+from Experiments.CollectiveActivity.config_cad_concordia import cfg
 
 
 def convert_targets_to_right_shape(targets_actions, targets_activities):
@@ -68,12 +67,14 @@ def activities_accuracy(student_predictions, targets):
     return activities_accuracy
 
 
-def main(model):
+def main(backbone, use_gpu, gpu_id):
 
-    if model == 'mobilenet':
-        cfg = cfg_mobile
+    if backbone == 'mobilenet':
+        cfg.backbone = 'mobilenet'
     else:
-        cfg = cfg_inception
+        cfg.backbone = 'inv3'
+
+    cfg.use_gpu=use_gpu
     # Teacher
     path_to_save_predicates = 'Experiments/CollectiveActivity/data/teacher/train'
     knowledge_base_factory = PredicateBuilder(path_to_save_predicates, cfg)
@@ -104,7 +105,15 @@ def main(model):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Collective Activity Detection using Concordia')
-    parser.add_argument('--model', required=True)
-    parser.add_argument('--device', required=True)
+    parser.add_argument('--backbone',
+                        default='inv3',
+                        help='Backbone of the base model: Choose mobilenet or inception')
+    parser.add_argument('--use_gpu',
+                        default=False,
+                        type=bool,
+                        help='DNN can be trained on gpu, which is significantly faster. Default is False.')
+    parser.add_argument('--gpu_id',
+                        default=0,
+                        help='Specify which gpu to use. Default is 0.')
     args = parser.parse_args()
-    main(model=args.model)
+    main(backbone=args.backbone, use_gpu=args.use_gpu, gpu_id=args.gpu_id)
