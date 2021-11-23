@@ -145,8 +145,6 @@ $ pip install -r requirements_concordia.py
 
 Then, install `torch==1.10.0` and `torchvision=0.11.1` according to your local cuda setting. You can find the right command on [pytorch](https://pytorch.org/get-started/locally/).
 
-### See above
-
 
 ## Experiments
 
@@ -161,5 +159,3 @@ For the Collective-Activity-Dataset, you will need to install a couple of additi
 ```
 $ pip install -r requirements_cad.py
 ```
-
-### TODO: remove unnecessary files, add experiment files
