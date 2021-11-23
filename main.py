@@ -4,6 +4,7 @@ from torch.optim import Adam
 import argparse
 import sys
 sys.path.append(".")
+
 from Concordia.Teacher import PSLTeacher
 from Concordia.Student import Student
 from Concordia.ConcordiaNetwork import ConcordiaNetwork
@@ -85,7 +86,6 @@ def main(backbone, use_gpu, gpu_id):
     teacher_psl = PSLTeacher(predicates_to_infer=['DOING', None],
                              knowledge_base_factory=knowledge_base_factory,
                              **config_concordia)
-    teacher_psl.build_model()
 
     # Student
     base_neural_network = BaseNet(cfg)

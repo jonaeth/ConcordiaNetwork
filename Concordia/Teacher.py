@@ -18,7 +18,7 @@ class Teacher(ABC):
             self.predicates = []
         self.config = config
 
-    def build_model(self):
+    def _build_model(self):
         pass
 
     def __str__(self):
