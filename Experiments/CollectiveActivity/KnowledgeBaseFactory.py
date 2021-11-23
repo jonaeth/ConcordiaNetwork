@@ -3,7 +3,7 @@ import pandas as pd
 from scipy.special import softmax
 
 
-class PredicateBuilder:
+class KnowledgeBaseFactory:
     def __init__(self, path_to_save_predicates, collective_activity_config):
         self.path_to_save_predicates = path_to_save_predicates
         self.cfg = collective_activity_config

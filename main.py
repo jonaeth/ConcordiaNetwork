@@ -9,7 +9,7 @@ from Concordia.ConcordiaNetwork import ConcordiaNetwork
 from Concordia.torch_losses import cross_entropy
 
 from Experiments.CollectiveActivity.NeuralNetworkModels.BaseNet import BaseNet
-from Experiments.CollectiveActivity.PredicateBuilder import PredicateBuilder
+from Experiments.CollectiveActivity.KnowledgeBaseFactory import KnowledgeBaseFactory
 from Experiments.CollectiveActivity.dataset import return_dataset
 from Experiments.CollectiveActivity.config_concordia import config_concordia
 from Experiments.CollectiveActivity.CollectiveActivityCallback import CollectiveActivityCallback
@@ -77,7 +77,7 @@ def main(backbone, use_gpu, gpu_id):
     cfg.use_gpu=use_gpu
     # Teacher
     path_to_save_predicates = 'Experiments/CollectiveActivity/data/teacher/train'
-    knowledge_base_factory = PredicateBuilder(path_to_save_predicates, cfg)
+    knowledge_base_factory = KnowledgeBaseFactory(path_to_save_predicates, cfg)
     teacher_psl = PSLTeacher(predicates_to_infer=['DOING', None],
                              knowledge_base_factory=knowledge_base_factory,
                              **config_concordia)
