@@ -114,6 +114,7 @@ if __name__ == '__main__':
                         help='DNN can be trained on gpu, which is significantly faster. Default is False.')
     parser.add_argument('--gpu_id',
                         default=0,
+                        type=int,
                         help='Specify which gpu to use. Default is 0.')
     args = parser.parse_args()
     main(backbone=args.backbone, use_gpu=args.use_gpu, gpu_id=args.gpu_id)
