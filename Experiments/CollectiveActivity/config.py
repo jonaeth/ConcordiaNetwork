@@ -19,8 +19,8 @@ class Config(object):
 
         # Gpu
         self.use_gpu = False
-        self.use_multi_gpu = False
-        self.device_list = "0,1"  # id list of gpus used for training # TODO
+        self.use_multi_gpu = False  # Not implemented
+        self.gpu_id = 0
 
         # Dataset
         assert (dataset_name in ['collective'])

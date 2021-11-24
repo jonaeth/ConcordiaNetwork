@@ -1,7 +1,8 @@
+import os
+
 from torch.utils import data
 from torch.optim import Adam
 import argparse
-import sys
 
 from Concordia.Teacher import PSLTeacher
 from Concordia.Student import Student
@@ -14,6 +15,7 @@ from Experiments.CollectiveActivity.collective import return_dataset
 from Experiments.CollectiveActivity.config_concordia import config_concordia
 from Experiments.CollectiveActivity.CollectiveActivityCallback import CollectiveActivityCallback
 from Experiments.CollectiveActivity.CAD_metrics_and_loss import *
+from Experiments.CollectiveActivity.logging import *
 
 
 def main(backbone, use_gpu, gpu_id):
@@ -27,6 +29,10 @@ def main(backbone, use_gpu, gpu_id):
 
     cfg.exp_note = 'Collective_train_' + backbone
     cfg.use_gpu = use_gpu
+    if use_gpu:
+        os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(f'{i}' for i in range(gpu_id+1))
+        cfg.gpu_id = gpu_id
+    show_config(cfg)
 
     # Teacher
     path_to_save_predicates = 'Experiments/CollectiveActivity/data/teacher/train'
@@ -49,6 +55,8 @@ def main(backbone, use_gpu, gpu_id):
     custom_metrics = {'actions_acc': actions_accuracy, 'activities_acc': activities_accuracy}
 
     concordia_network = ConcordiaNetwork(student_nn, teacher_psl, **config_concordia)
+
+
     concordia_network.fit(data.DataLoader(training_set),
                           data.DataLoader(validation_set),
                           callbacks=callbacks,
