@@ -24,21 +24,17 @@ The Repo is split into two folders: `Concordia` and `Experiments`. `Concordia` c
 
 All files in Concordia are described below. The Experiments folder is set up the following way:
 
-Each experiment has its own folder, e.g. `CollectiveActivity`. Inside, Concordia expects a `data` folder, with the data being split between the data for the `student` and the `teacher` and inside between training and testing data respectively. 
+Each experiment has its own folder, e.g. `CollectiveActivity`. Inside, Concordia expects a `data` folder, and a `teacher` folder.
 
 Inside the `teacher` folder, in addition, you will find a `model` folder, which contains a `model.psl` file containing the rules, and if trained ahead of time their respective weights, and a `predicates.psl` describing all predicates and their arguments in the model, i.e.
 
 ```
 /data
-  /student
-	/test
-	/train
-  /teacher
-	/model
-	  .model.psl
-	  .predicates.psl
-	/test
-	/train
+/teacher
+  /model
+    .model.psl
+    .predicates.psl
+  /train
 ```
 
 Finally, there is a `NeuralNetworkModels` folder containing all the neural models that you might want to use for the student.
@@ -150,12 +146,19 @@ Then, install `torch==1.10.0` and `torchvision=0.11.1` according to your local c
 
 To run the experiments described in our paper, you will need to download and unzip the [Collective-Activity-Dataset](http://cvgl.stanford.edu/data/ActivityDataset.zip) and the [Augmented Collective Activity Dataset](http://cvgl.stanford.edu/data/ActivityDataset2.tar.gz), as well as the [Target Trajectories](http://cvgl.stanford.edu/data/ActivityTracks.tar.gz).
 
-Then, move the data to the following folders:
-
-### XXX
+Then, move the data to the data folder and run from within the `/Experiments/CollectiveActivity` folder
+```
+python merge_tracks_with_annotations.py
+```
 
 For the Collective-Activity-Dataset, you will need to install a couple of additional libraries, which we have put in `requirements_cad.py`. Run:
 
 ```
 $ pip install -r requirements_cad.py
+```
+
+Finally, you can run the main function with the following options, which are described by running the function with `--help` flag:
+
+```
+python main.py --backbone [backbone] --use_gpu [use_gpu] --gpu_id [gpu_id]
 ```
