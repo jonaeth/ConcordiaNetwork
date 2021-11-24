@@ -15,8 +15,6 @@ from Experiments.CollectiveActivity.config_concordia import config_concordia
 from Experiments.CollectiveActivity.CollectiveActivityCallback import CollectiveActivityCallback
 from Experiments.CollectiveActivity.CAD_metrics_and_loss import *
 
-sys.path.append(".")
-
 
 def main(backbone, use_gpu, gpu_id):
     # Set up config

@@ -15,7 +15,7 @@ Concordia is a neuro-symbolic architecture that combines lifted graphical models
 3. [Student](#student)
 4. [Concordia Network](#concordia-network)
 5. [Additional Files](#additional-files)
-6. [Installation and Set-Up](#installation)
+6. [Installation and Set-Up](#installation-and-set-up)
 7. [Experiments](#experiments)
 
 ## Repo Structure

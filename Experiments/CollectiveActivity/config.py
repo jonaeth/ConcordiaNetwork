@@ -69,7 +69,7 @@ class Config(object):
         # Training Parameters
         self.train_random_seed = 0
         self.train_learning_rate = 1e-5  # initial learning rate
-        self.lr_plan = {41: 1e-4, 81: 5e-5, 121: 1e-5}  # change learning rate in these epochs
+        self.lr_plan = {}  # change learning rate in these epochs
         self.train_dropout_prob = 0.5  # dropout probability
         self.weight_decay = 1e-2  # l2 weight decay
 
@@ -85,7 +85,7 @@ class Config(object):
         self.exp_name = None
 
         # Our experiments
-        self.use_psl = False
+        self.use_psl = True
         self.train_psl = False
         self.start_psl_at_epoch = 5
 
