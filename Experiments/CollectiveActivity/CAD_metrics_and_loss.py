@@ -1,6 +1,7 @@
 import torch
 from Concordia.torch_losses import cross_entropy
 
+
 def convert_targets_to_right_shape(targets_actions, targets_activities):
     batch_size = targets_actions.shape[0]
     max_number_bboxes = targets_actions.shape[2]

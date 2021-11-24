@@ -46,10 +46,8 @@ ACTIVITIES=['Crossing','Waiting','Queueing','Walking','Talking','Dancing','Joggi
 
 def collective_read_annotations(cfg, path, sid):
     annotations={}
-    if cfg.use_modified_same_predicate:
-        path=path + '/seq%02d/fixed_bboxes.txt' % sid
-    else:
-        path = path + '/seq%02d/new_annotations.txt' % sid
+
+    path = path + '/seq%02d/new_annotations.txt' % sid
 
     with open(path,mode='r') as f:
         frame_id=None
@@ -77,13 +75,7 @@ def collective_read_annotations(cfg, path, sid):
                 group_activity=None
                 actions=[]
                 bboxes=[]
-            if not cfg.include_walking:
-                action = int(values[5]) - 1
-                if action == 4 and cfg.remove_walking:
-                    continue
-                actions.append(adjust_actions_annotations(int(values[5])-1) if not cfg.include_walking else int(values[5])-1)
-            else:
-                actions.append(int(values[5])-1)
+            actions.append(int(values[5])-1)
 
             x,y,w,h = (int(values[i])  for i  in range(1,5))
             H,W=FRAMES_SIZE[sid]
@@ -116,16 +108,11 @@ def collective_read_dataset(cfg, path,seqs):
         data_concatenated += itertools.chain.from_iterable([frame['actions'] for frame in data[sid].values()])
     counter = Counter(data_concatenated)
 
-    if cfg.include_walking:
-        ACTIONS_ID = {0: 'NA', 1: 'Crossing', 2:'Waiting', 3:'Queueing', 4: 'Walking', 5:'Talking', 6:'Dancing', 7:'Jogging'}
-        total_bboxes = sum(counter.values())
-        for id, frequency in counter.items():
-            print(f'{ACTIONS_ID[id]} ({id}): {frequency}, {frequency/total_bboxes}')
-    else:
-        ACTIONS_ID = {0: 'NA', 1: 'Crossing', 2: 'Waiting', 3: 'Queueing', 4: 'Talking', 5: 'Dancing', 6: 'Jogging'}
-        total_bboxes = sum(counter.values())
-        for id, frequency in counter.items():
-            print(f'{ACTIONS_ID[id]} ({id}): {frequency}, {frequency / total_bboxes}')
+    ACTIONS_ID = {0: 'NA', 1: 'Crossing', 2:'Waiting', 3:'Queueing', 4: 'Walking', 5:'Talking', 6:'Dancing', 7:'Jogging'}
+    total_bboxes = sum(counter.values())
+    for id, frequency in counter.items():
+        print(f'{ACTIONS_ID[id]} ({id}): {frequency}, {frequency/total_bboxes}')
+
     return data
 
 def collective_all_frames(anns):
