@@ -146,7 +146,7 @@ Then, install `torch==1.10.0` and `torchvision=0.11.1` according to your local c
 
 To run the experiments described in our paper, you will need to download and unzip the [Collective-Activity-Dataset](http://cvgl.stanford.edu/data/ActivityDataset.zip) and the [Augmented Collective Activity Dataset](http://cvgl.stanford.edu/data/ActivityDataset2.tar.gz), as well as the [Target Trajectories](http://cvgl.stanford.edu/data/ActivityTracks.tar.gz).
 
-Then, move the data to the data folder and run from within the `/Experiments/CollectiveActivity` folder
+Then, create a `data` folder in `/Experiments/CollectiveActivity` and move the data to the data folder and run from within the `/Experiments/CollectiveActivity` folder
 ```
 python merge_tracks_with_annotations.py
 ```
