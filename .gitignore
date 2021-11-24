@@ -13,8 +13,9 @@
 *.iml
 *.pyc
 
-/Experiments/CollectiveActivity/data/collective/ActivityDataset/**
-/Experiments/Recommendations/data/teacher/train/**
-/Experiments/Recommendations/data/teacher/test/**
+/Experiments/CollectiveActivity/data/**
+/Experiments/Recommendations/teacher/train/**
+/Experiments/Recommendations/teacher/test/**
 
 /Experiments/CollectiveActivity/result/**
+.DS_Store

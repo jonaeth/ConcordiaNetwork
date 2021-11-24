@@ -12,8 +12,8 @@ config_concordia = {
     ###################################################################
     # Teacher
     ###################################################################
-    'teacher_model_path': 'Experiments/CollectiveActivity/data/teacher/model',
-    'ground_predicates_path': 'Experiments/CollectiveActivity/data/teacher/train',
+    'teacher_model_path': 'Experiments/CollectiveActivity/teacher/model',
+    'ground_predicates_path': 'Experiments/CollectiveActivity/teacher/train',
     'psl_options': {
         'log4j.threshold': 'OFF',
         'votedperceptron.numsteps': '2'

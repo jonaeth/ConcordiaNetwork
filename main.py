@@ -35,7 +35,7 @@ def main(backbone, use_gpu, gpu_id):
     show_config(cfg)
 
     # Teacher
-    path_to_save_predicates = 'Experiments/CollectiveActivity/data/teacher/train'
+    path_to_save_predicates = 'Experiments/CollectiveActivity/teacher/train'
     knowledge_base_factory = KnowledgeBaseFactory(path_to_save_predicates, cfg)
     teacher_psl = PSLTeacher(predicates_to_infer=['DOING', None],
                              knowledge_base_factory=knowledge_base_factory,
