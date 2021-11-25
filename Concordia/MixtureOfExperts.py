@@ -20,9 +20,7 @@ class MixtureOfExperts(nn.Module):
         out = self.conv1(x)
         out = self.avgpool_10x10(out)
         out = self.flatten(out)
-        out = torch.concat([torch.mean(out.reshape(1, *out.shape), axis=1)
-                                 .reshape(1, -1)
-                                 .repeat(psl_predictions.shape[0], 1), psl_predictions, nn_predictions], axis=1)
+        out = torch.concat([torch.mean(out.reshape(1, *out.shape), axis=1).reshape(1, -1).repeat(psl_predictions.shape[0], 1), psl_predictions, nn_predictions], axis=1)
         out = self.fc(out)
         return self.sigmoid(out)
 

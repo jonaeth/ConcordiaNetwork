@@ -18,15 +18,21 @@ class ConcordiaNetwork:
 
         for epoch in range(1, epochs+1):
             batches_metrics = []
-            for input, target in tqdm(train_data_loader):
-                student_prediction = self.student.predict(self._to_device(input))
-                teacher_prediction = self.teacher.predict(self._detach_variables(input),
+            for training_input, target in tqdm(train_data_loader):
+                student_prediction = self.student.predict(self._to_device(training_input))
+                teacher_prediction = self.teacher.predict(self._detach_variables(training_input),
                                                           self._detach_variables(student_prediction),
                                                           self._detach_variables(target))
 
-                loss = self.compute_loss(student_prediction, self._to_device(teacher_prediction), self._to_device(target))
+                loss = self.compute_loss(student_prediction,
+                                         self._to_device(teacher_prediction),
+                                         self._to_device(target))
                 self.student.fit(loss)
-                batches_metrics.append(self._get_batch_metrics(self._detach_variables(student_prediction), target, metrics, loss.item()))
+                # TODO: Consider this to run on GPU
+                batches_metrics.append(self._get_batch_metrics(self._detach_variables(student_prediction),
+                                                               target,
+                                                               metrics,
+                                                               loss.item()))
 
             epoch_log = self._build_epoch_log(batches_metrics, 'Training')
             self._run_callbacks(callbacks, 'epoch_end', epoch_log, epoch)
@@ -62,13 +68,14 @@ class ConcordiaNetwork:
 
     def _evaluate_student(self, val_data_loader, epoch, callbacks=None, metrics=None):
         batches_metrics = []
-        for input, target in tqdm(val_data_loader):
-            student_prediction = self.student.predict(input)
+        for validation_input, target in tqdm(val_data_loader):
+            student_prediction = self.student.predict(validation_input)
             loss = self.student.loss_fn(student_prediction, target)
             batches_metrics.append(self._get_batch_metrics(student_prediction, target, metrics, loss.item()))
         epoch_log = self._build_epoch_log(batches_metrics, 'Test')
         self._run_callbacks(callbacks, 'epoch_end', epoch_log, epoch)
 
+    # TODO move this to another class potentially, Logging class?
     def _build_epoch_log(self, batches_metrics, evaluation_step):
         wide_batch_metrics = defaultdict(list)
         for batch_metrics in batches_metrics:
