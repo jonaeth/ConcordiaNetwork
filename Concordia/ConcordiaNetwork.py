@@ -2,7 +2,7 @@ import torch
 from tqdm import tqdm
 from collections import defaultdict
 import numpy as np
-from Concordia.torch_losses import kl_divergence
+from Concordia.utils.torch_losses import kl_divergence
 from Concordia.MixtureOfExperts import MixtureOfExperts
 
 

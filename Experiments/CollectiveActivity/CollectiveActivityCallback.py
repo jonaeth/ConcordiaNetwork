@@ -1,4 +1,4 @@
-from Concordia.Callback import Callback
+from Concordia.utils.Callback import Callback
 from Experiments.CollectiveActivity.logging import *
 
 

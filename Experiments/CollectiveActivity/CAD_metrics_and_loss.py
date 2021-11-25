@@ -1,5 +1,5 @@
 import torch
-from Concordia.torch_losses import cross_entropy
+from Concordia.utils.torch_losses import cross_entropy
 
 
 def convert_targets_to_right_shape(targets_actions, targets_activities):
