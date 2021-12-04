@@ -30,7 +30,7 @@ class Teacher(ABC):
     def fit(self):
         pass
 
-    def predict(self, teacher_input, student_predictions, target):
+    def predict(self, teacher_input, target):
         pass
 
 
@@ -61,6 +61,9 @@ class PSLTeacher(Teacher):
 
         self.model_path = config['teacher_model_path']
         self.model = self._build_model()
+        self.regression = config['regression'] if 'regression' in config else False
+        self.markov_blanket_file = config['markov_blanket_file'] if 'markov_blanket_file' in config else 'markov_blanket.psl'
+        self.predicates_folder = config['predicates_folder']
 
     def _build_model(self):
         model = Model('Teacher')
@@ -103,10 +106,12 @@ class PSLTeacher(Teacher):
         self.model.learn(additional_cli_optons=self.cli_options,
                          psl_config=self.psl_options,
                          jvm_options=self.jvm_options)
+        if self.regression:
+            self.get_markov_blankets()
 
-    def predict(self, teacher_input, student_predictions, target):
-        self.knowledge_base_factory.build_predicates(teacher_input, student_predictions, target)
-        self._set_ground_predicates(self.knowledge_base_factory.path_to_save_predicates)
+    def predict(self, teacher_input, target):
+        self.knowledge_base_factory.build_predicates(teacher_input, target)
+        self._set_ground_predicates()
 
         if self.config['train_teacher']:
             self.fit()
@@ -124,11 +129,11 @@ class PSLTeacher(Teacher):
                 predictions.append(torch.Tensor(psl_predictions))
         return predictions
 
-    def _set_ground_predicates(self, predicate_folder):
+    def _set_ground_predicates(self):
         grounded_predicates = []
-        observations_folder = f'{predicate_folder}/observations/'
-        targets_folder = f'{predicate_folder}/targets/'
-        truths_folder = f'{predicate_folder}/truths/'
+        observations_folder = f'{self.predicates_folder}/observations/'
+        targets_folder = f'{self.predicates_folder}/targets/'
+        truths_folder = f'{self.predicates_folder}/truths/'
         observed_predicates = [predicate.replace('.psl', '') for predicate in os.listdir(observations_folder)]
         target_predicates = [predicate.replace('.psl', '') for predicate in os.listdir(targets_folder)]
         truth_predicates = [predicate.replace('.psl', '') for predicate in os.listdir(truths_folder)]
@@ -146,6 +151,14 @@ class PSLTeacher(Teacher):
                                                                   f'{truths_folder}/{predicate}.psl')
             grounded_predicates.append(predicate)
 
+    def get_markov_blankets(self):
+        for predicate in self.predicates_to_infer:
+            self.model.get_predicate(predicate).clear_data()
+            self.model.get_predicate(predicate).add_data_file(Partition.TARGETS,
+                                                              f'{self.predicates_folder}/rated_obs.psl')
+        self.model.infer(additional_cli_optons=
+                         ['--groundrules', self.predicates_folder + self.markov_blanket_file] + self.cli_options,
+                         jvm_options=self.jvm_options)
 
 
 

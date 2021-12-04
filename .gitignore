@@ -14,8 +14,8 @@
 *.pyc
 
 /Experiments/CollectiveActivity/data/**
-/Experiments/Recommendations/teacher/train/**
-/Experiments/Recommendations/teacher/test/**
+/Experiments/RecommendationsMovieLens/teacher/train/**
+/Experiments/RecommendationsMovieLens/teacher/test/**
 
 /Experiments/CollectiveActivity/result/**
 .DS_Store

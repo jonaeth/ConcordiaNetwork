@@ -20,8 +20,8 @@ class ConcordiaNetwork:
             batches_metrics = []
             for training_input, target in tqdm(train_data_loader):
                 student_prediction = self.student.predict(self._to_device(training_input))
-                teacher_prediction = self.teacher.predict(self._detach_variables(training_input),
-                                                          self._detach_variables(student_prediction),
+                teacher_input = self._detach_variables(training_input + student_prediction)
+                teacher_prediction = self.teacher.predict(teacher_input,
                                                           self._detach_variables(target))
 
                 loss = self.compute_loss(student_prediction,

@@ -13,10 +13,11 @@ class KnowledgeBaseFactory:
             for predicate_tuple in predicate_values:
                 fp.write('\t'.join([str(val) for val in predicate_tuple]) + '\n')
 
-    def build_predicates(self, inputs, student_predictions, targets):
-        batch_data = inputs
-        batch_size=batch_data[0].shape[0]
-        num_frames=batch_data[0].shape[1]
+    def build_predicates(self, inputs, targets):
+        batch_data = inputs[0:3]
+        student_predictions = inputs[3:5]
+        batch_size = batch_data[0].shape[0]
+        num_frames = batch_data[0].shape[1]
         actions_in = targets[0].reshape((batch_size, num_frames, self.cfg.num_boxes))
         bboxes_num = batch_data[2].reshape(batch_size, num_frames)
         action_scores, activities_scores = student_predictions
@@ -30,12 +31,13 @@ class KnowledgeBaseFactory:
             actions_in_nopad_same_shape.append(actions_of_batch)
 
         bounding_boxes = batch_data[1].detach().cpu().numpy()
-        actions_scores_original_size = self._convert_action_scores_to_original_shape(action_scores, bboxes_num, batch_size)
+        actions_scores_original_size = self._convert_action_scores_to_original_shape(action_scores, bboxes_num,
+                                                                                     batch_size)
         bboxes_nopad = self._remove_padding_from_bounding_boxes(bounding_boxes, bboxes_num, batch_size)
-        ground_truths = [[np.identity(self.cfg.num_actions)[action.cpu().numpy()] for action in batch] for batch in actions_in_nopad_same_shape]
+        ground_truths = [[np.identity(self.cfg.num_actions)[action.cpu().numpy()] for action in batch] for batch in
+                         actions_in_nopad_same_shape]
 
         self.build_and_save_psl_predicates(bboxes_nopad, actions_scores_original_size, ground_truths)
-
 
     def _convert_action_scores_to_original_shape(self, actions_scores, bboxes_num, batch_size):
         actions_scores_original_size = []
@@ -44,11 +46,10 @@ class KnowledgeBaseFactory:
         for b in range(batch_size):
             batch_action_scores = []
             for nr_of_boxes in bboxes_num[b].squeeze(0):
-                batch_action_scores.append(action_scores_cpu[cumm_counter:cumm_counter+nr_of_boxes])
+                batch_action_scores.append(action_scores_cpu[cumm_counter:cumm_counter + nr_of_boxes])
                 cumm_counter += nr_of_boxes
             actions_scores_original_size.append(batch_action_scores)
         return actions_scores_original_size
-
 
     def _remove_padding_from_bounding_boxes(self, bounding_boxes, bboxes_num, batch_size):
         bboxes_nopad = []
@@ -78,12 +79,12 @@ class KnowledgeBaseFactory:
     def get_distance_between_boxes(self, box1, box2):
         box_1_center = np.array([(box1[0] + box1[1]) / 2, (box1[2] + box1[3]) / 2])
         box_2_center = np.array([(box2[0] + box2[1]) / 2, (box2[2] + box2[3]) / 2])
-        return np.exp(-np.linalg.norm((box_1_center - box_2_center) / 8)) #this 8 is hardcoded for the rbf kernel
-
+        return np.exp(-np.linalg.norm((box_1_center - box_2_center) / 8))  # this 8 is hardcoded for the rbf kernel
 
     """
         Closeness between bounding boxes predicate is computed between bboxes in the same frame.
     """
+
     def distances_between_bounding_boxes(self, df):
         distances = []
         for _, df_frame in df.groupby('frame_id'):
@@ -91,7 +92,8 @@ class KnowledgeBaseFactory:
             for box_id_1, box1 in enumerate(bounding_boxes):
                 for box_id_2, box2 in enumerate(bounding_boxes):
                     if box_id_1 != box_id_2:
-                        distances.append((int(box1[1]), int(box2[1]), self.get_distance_between_boxes(box1[0], box2[0])))
+                        distances.append(
+                            (int(box1[1]), int(box2[1]), self.get_distance_between_boxes(box1[0], box2[0])))
         if len(distances) == 0:
             distances.append((-1, -1, 0))
         return distances
@@ -111,7 +113,6 @@ class KnowledgeBaseFactory:
                 predicate_values.append((box_id, i, box[i]))
         self.write_predicate_to_file(predicate_values, 'Local', 'observations')
 
-
     def build_truth_doing_predicates(self, bounding_box_label_pred):
         nr_of_actions = len(bounding_box_label_pred[0])
         predicate_values = []
@@ -120,7 +121,6 @@ class KnowledgeBaseFactory:
                 predicate_values.append((box_id, i, box[i]))
         self.write_predicate_to_file(predicate_values, 'Doing', 'truths')
         self.write_predicate_to_file(predicate_values, 'DoingTruth', 'truths')
-
 
     def build_frame_global_label(self, df_data, cfg):
         nr_of_actions = len(df_data['concatinated_bb_labels'].iloc[0])
@@ -137,7 +137,6 @@ class KnowledgeBaseFactory:
                 predicate_values.append((j, i, avg_box_label_pred.loc[frame_nr][i]))
         self.write_predicate_to_file(predicate_values, 'GlobalAct', 'observations')
 
-
     def build_target_doing_predicates(self, df):
         nr_of_actions = len(df['concatinated_bb_labels'].iloc[0])
         predicate_values = []
@@ -145,7 +144,6 @@ class KnowledgeBaseFactory:
             for i in range(nr_of_actions):
                 predicate_values.append((box_id, i))
         self.write_predicate_to_file(predicate_values, 'Doing', 'targets')
-
 
     def build_sequence_predicate(self, df):
         predicate_values = []
@@ -163,7 +161,7 @@ class KnowledgeBaseFactory:
                 if df.iloc[box_id1]['frame_id'] + 1 == df.iloc[box_id2]['frame_id']:
                     predicate_values.append((box_id1, box_id2,
                                              self.get_distance_between_boxes(df.iloc[box_id1]['concatinated_bb'],
-                                                                        df.iloc[box_id1]['concatinated_bb'])))
+                                                                             df.iloc[box_id1]['concatinated_bb'])))
         self.write_predicate_to_file(predicate_values, 'CloseSeq', 'observations')
 
     def build_same_obs_predicate(self, df):
@@ -195,7 +193,6 @@ class KnowledgeBaseFactory:
             frame_cumu_idx += 10
         concatinated_bb_labels = softmax(concatinated_bb_labels, axis=1)
 
-
         return concatinated_bb, concatinated_bb_labels, concatinated_ground_truths, frame_indexes, concatinated_bb_targets
 
     def build_pandas_df_from_input_data(self, concatinated_bb, frame_indexes, concatinated_bb_targets,
@@ -210,7 +207,8 @@ class KnowledgeBaseFactory:
 
     def build_and_save_psl_predicates(self, bounding_boxes_coord, bounding_boxes_student_predictions, ground_truths):
         concatinated_bb, concatinated_bb_labels, concatinated_ground_truths, frame_indexes, concatinated_bb_targets \
-            = self.build_bounding_boxes_data_structure(bounding_boxes_coord, bounding_boxes_student_predictions, ground_truths)
+            = self.build_bounding_boxes_data_structure(bounding_boxes_coord, bounding_boxes_student_predictions,
+                                                       ground_truths)
         df = self.build_pandas_df_from_input_data(concatinated_bb, frame_indexes, concatinated_bb_targets,
                                                   concatinated_bb_labels, concatinated_ground_truths)
         self.build_close_predicate(df)
