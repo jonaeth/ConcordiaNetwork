@@ -22,10 +22,10 @@ def predict_psl_distribution(fold_nr, data_fraction, psl_prediction_folder, outp
     print('making inference')
     prob_estimations = get_pdf_estimate_of_targets_integration(herbrand_base, facts, target_predicate_arguments,
                                                                'rating', path_to_save_prob_density_files)
-    #print('inference is done')
-    #with open(path_to_save_prob_density_files, 'w') as fp:
-    #    fp.writelines([f"{user_id}\t{item_id}\t{', '.join([str(i) for i in dist])}\n" for (user_id, item_id), dist in
-    #                   zip(target_predicate_arguments, prob_estimations)])
+    print('inference is done')
+    with open(path_to_save_prob_density_files, 'w') as fp:
+       fp.writelines([f"{user_id}\t{item_id}\t{', '.join([str(i) for i in dist])}\n" for (user_id, item_id), dist in
+                      zip(target_predicate_arguments, prob_estimations)])
 
 
 #predict_psl_distribution(0, 5)
