@@ -20,5 +20,6 @@ config_concordia = {
     },
     'cli_options': [],
     'jvm_options': ['-Xms4096M', '-Xmx12000M'],
-    'teacher_student_distributions_comparison': [True, False]
+    'teacher_student_distributions_comparison': [True, False],
+    'predicates_folder': 'Experiments/CollectiveActivity/teacher/train'
 }

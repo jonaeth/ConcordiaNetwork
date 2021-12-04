@@ -6,6 +6,7 @@ from pslpython.predicate import Predicate
 from pslpython.rule import Rule
 from distutils.util import strtobool
 import torch
+import pandas as pd
 
 
 class Teacher(ABC):
@@ -153,9 +154,9 @@ class PSLTeacher(Teacher):
 
     def get_markov_blankets(self):
         for predicate in self.predicates_to_infer:
-            self.model.get_predicate(predicate).clear_data()
-            self.model.get_predicate(predicate).add_data_file(Partition.TARGETS,
-                                                              f'{self.predicates_folder}/rated_obs.psl')
+            target_atoms = pd.concat([self.model.get_predicate(predicate).data()[Partition.OBSERVATIONS],
+                                      self.model.get_predicate(predicate).data()[Partition.TARGETS]]).iloc[:, :-1]
+            self.model.get_predicate(predicate).add_data(Partition.TARGETS, target_atoms)
         self.model.infer(additional_cli_optons=
                          ['--groundrules', self.predicates_folder + self.markov_blanket_file] + self.cli_options,
                          jvm_options=self.jvm_options)
