@@ -3,11 +3,9 @@ import numpy as np
 
 
 class Facts:
-    def __init__(self, facts_file, fold, mode, frac=None):
+    def __init__(self, facts_file, mode):
         grounded_predicates_files = self.read_grounded_predicate_files(facts_file,
-                                                                       str(fold) if fold else fold,
-                                                                       str(mode),
-                                                                       str(frac)
+                                                                       str(mode)
                                                                        )
         self.facts_base = defaultdict(dict)
         for predicate, arity, predicate_data_file in grounded_predicates_files:
@@ -70,7 +68,7 @@ class Facts:
 
         return predicate_truth_value_mapping
 
-    def read_grounded_predicate_files(self, src_path, fold, mode, frac):
+    def read_grounded_predicate_files(self, src_path, mode):
         '''
         Reads predicate groundings file which for each predicate contains paths to its truth values for a specific
         grounding, and predicate's arity.
@@ -79,7 +77,7 @@ class Facts:
         The file format:
         PREDICATE_NAME\arity: Path to the file containing truth values for specific groundings
         e.g.:
-        SIM_PEARSON_ITEMS/2: Data/Yelp/Transformed/?frac?/?fold?/?mode?/sgd_rating_obs.txt
+        SIM_PEARSON_ITEMS/2: Data/Yelp/Transformed/?mode?/sgd_rating_obs.txt
         These txt files contain, for a specific predicate, data of the form:
         e.g. Rating(user, item):
         '
@@ -91,9 +89,7 @@ class Facts:
         952 \t 105 \t 0.57
         '
         :param src_path:
-        :param fold: integer value representing fold number from kfold cross validation
-        :param mode: integer value representing percentage of data available to the models
-        :param frac: string value representing if we want to read PSL learn or eval split
+        :param mode: string value representing if we want to read PSL train or eval split
         :return:
         A list of lists containing predicate name, its arity and path to the file containing truth values:
         [
@@ -108,10 +104,7 @@ class Facts:
             lines = fp.readlines()
         return_lines = []
         for line in lines:
-            if fold is not None:
-                line = line.replace('?fold?', fold)
             line = line.replace('?mode?', mode)
-            line = line.replace('?frac?', frac)
 
             predicate_arity, data_path = line.strip().split(': ')
             predicate, arity = predicate_arity.split('/')

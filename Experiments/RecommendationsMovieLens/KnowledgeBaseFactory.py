@@ -16,7 +16,6 @@ class KnowledgeBaseFactory:
         df_ratings_obs = training_data[2]
 
         self.transformed_data = DataTransformation(df_users, df_items, df_ratings_obs, True)
-        os.makedirs(self.path_to_save_predicates, exist_ok=True)
         print('Writing predicate data')
         self._build_avg_item_obs()
         self._build_avg_user_obs()
@@ -34,25 +33,25 @@ class KnowledgeBaseFactory:
         self._build_sim_mf_euclidean_users_obs()
         normalize_ratings(self.path_to_save_predicates)
         df_rated_obs = pd.concat([df_ratings_obs, df_ratings_targets])[['user_id', 'item_id']]
-        df_rated_obs.to_csv(f'{self.path_to_save_predicates}/rated_obs.psl', header=None, index=False, sep='\t')
-        df_ratings_obs[['user_id', 'item_id', 'rating']].to_csv(f'{self.path_to_save_predicates}/rating_obs.psl',
+        df_rated_obs.to_csv(f'{self.path_to_save_predicates}/observations/rated.psl', header=None, index=False, sep='\t')
+        df_ratings_obs[['user_id', 'item_id', 'rating']].to_csv(f'{self.path_to_save_predicates}/observations/rating.psl',
                                                                 header=None, index=False,
                                                                 sep='\t')
 
-        df_ratings_targets[['user_id', 'item_id']].to_csv(f'{self.path_to_save_predicates}/rating_targets.psl',
+        df_ratings_targets[['user_id', 'item_id']].to_csv(f'{self.path_to_save_predicates}/targets/rating.psl',
                                                           header=None, index=False,
                                                           sep='\t')
-        df_ratings_targets[['user_id', 'item_id', 'rating']].to_csv(f'{self.path_to_save_predicates}/rating_truth.psl',
+        df_ratings_targets[['user_id', 'item_id', 'rating']].to_csv(f'{self.path_to_save_predicates}/truths/rating.psl',
                                                                     header=None,
                                                                     index=False, sep='\t')
 
     def _build_avg_item_obs(self):
         pd.DataFrame(self.transformed_data.df_ratings.groupby('item_id').rating.apply(np.mean).reset_index()) \
-            .to_csv(f'{self.path_to_save_predicates}/avg_item_rating_obs.psl', header=False, index=False, sep='\t')
+            .to_csv(f'{self.path_to_save_predicates}/observations/avg_item_rating.psl', header=False, index=False, sep='\t')
 
     def _build_avg_user_obs(self):
         pd.DataFrame(self.transformed_data.df_ratings.groupby('user_id').rating.apply(np.mean).reset_index()) \
-            .to_csv(f'{self.path_to_save_predicates}/avg_user_rating_obs.psl', header=False, index=False, sep='\t')
+            .to_csv(f'{self.path_to_save_predicates}/observations/avg_user_rating.psl', header=False, index=False, sep='\t')
 
     def _build_users_are_friends_obs(self):
         if 'friends_idx' not in self.transformed_data.df_users.columns:
@@ -61,7 +60,7 @@ class KnowledgeBaseFactory:
         for user_id, friend_list_idx in self.transformed_data.df_users[['user_id', 'friends_idx']].values:
             friend_pair_list += [(user_id, friend_id) for friend_id in friend_list_idx]
         df = pd.DataFrame(friend_pair_list, columns=['user_id', 'friend_id'])
-        df[df['user_id'] != df['friend_id']].to_csv(f'{self.path_to_save_predicates}/users_are_friends_obs.psl',
+        df[df['user_id'] != df['friend_id']].to_csv(f'{self.path_to_save_predicates}/observations/users_are_friends.psl',
                                                     header=False,
                                                     index=False, sep='\t')
 
@@ -71,23 +70,23 @@ class KnowledgeBaseFactory:
         all_distances, all_neighbor_idxs = nbrs.kneighbors(self.transformed_data.item_latent_space.T)
         all_distances, all_neighbor_idxs = self.__remove_self_reference_in_neighbours(all_distances, all_neighbor_idxs)
         self.save_predicate_obs_list_to_file(all_neighbor_idxs,
-                                             f'{self.path_to_save_predicates}/sim_mf_cosine_items_obs.psl')
+                                             f'{self.path_to_save_predicates}/observations/sim_mf_cosine_items.psl')
 
     def _build_sim_mf_cosine_users_obs(self):
         nbrs = NearestNeighbors(n_neighbors=51, metric='cosine', n_jobs=4).fit(self.transformed_data.user_latent_space)
         all_distances, all_neighbor_idxs = nbrs.kneighbors(self.transformed_data.user_latent_space)
         all_distances, all_neighbor_idxs = self.__remove_self_reference_in_neighbours(all_distances, all_neighbor_idxs)
         self.save_predicate_obs_list_to_file(all_neighbor_idxs,
-                                             f'{self.path_to_save_predicates}/sim_mf_cosine_users_obs.psl')
+                                             f'{self.path_to_save_predicates}/observations/sim_mf_cosine_users.psl')
 
     def _build_user_obs(self):
         self.transformed_data.df_users[['user_id']].sort_values('user_id').to_csv(
-            f'{self.path_to_save_predicates}/user_obs.psl', sep='\t',
+            f'{self.path_to_save_predicates}/observations/user.psl', sep='\t',
             index=False, header=False)
 
     def _build_item_obs(self):
         self.transformed_data.df_items[['item_id']].sort_values('item_id').to_csv(
-            f'{self.path_to_save_predicates}/item_obs.psl', sep='\t',
+            f'{self.path_to_save_predicates}/observations/item.psl', sep='\t',
             index=False, header=False)
 
     def _build_sim_adjust_cosine_items_obs(self):
@@ -98,7 +97,7 @@ class KnowledgeBaseFactory:
         all_distances, all_neighbor_idxs = self.__remove_self_reference_in_neighbours(all_distances, all_neighbor_idxs)
         _, filtered_neighbour_idxs = self.filter_nearest_neighbours(all_distances, all_neighbor_idxs, 1, operator.lt)
         self.save_predicate_obs_list_to_file(filtered_neighbour_idxs,
-                                             f'{self.path_to_save_predicates}/sim_adjcos_items_obs.psl')
+                                             f'{self.path_to_save_predicates}/observations/sim_adjcos_items.psl')
 
     def _build_sim_content_items_jaccard_obs(self):
         nbrs = NearestNeighbors(n_neighbors=51, metric='jaccard', n_jobs=4).fit(
@@ -108,7 +107,7 @@ class KnowledgeBaseFactory:
         all_distances, all_neighbor_idxs = self.__remove_self_reference_in_neighbours(all_distances, all_neighbor_idxs)
         _, filtered_neighbour_idxs = self.filter_nearest_neighbours(all_distances, all_neighbor_idxs, 1, operator.eq)
         self.save_predicate_obs_list_to_file(filtered_neighbour_idxs,
-                                             f'{self.path_to_save_predicates}/sim_content_items_jaccard_obs.psl')
+                                             f'{self.path_to_save_predicates}/observations/sim_content_items_jaccard.psl')
 
     def _build_sim_cosine_items(self):
         nbrs = NearestNeighbors(n_neighbors=51, metric='cosine', n_jobs=4).fit(self.transformed_data.rating_matrix)
@@ -116,7 +115,7 @@ class KnowledgeBaseFactory:
         all_distances, all_neighbor_idxs = self.__remove_self_reference_in_neighbours(all_distances, all_neighbor_idxs)
         _, filtered_neighbour_idxs = self.filter_nearest_neighbours(all_distances, all_neighbor_idxs, 1, operator.eq)
         self.save_predicate_obs_list_to_file(filtered_neighbour_idxs,
-                                             f'{self.path_to_save_predicates}/sim_cosine_items_obs.psl')
+                                             f'{self.path_to_save_predicates}/observations/sim_cosine_items.psl')
 
     def _build_sim_cosine_users(self):
         nbrs = NearestNeighbors(n_neighbors=51, metric='cosine', n_jobs=4).fit(self.transformed_data.rating_matrix.T)
@@ -124,7 +123,7 @@ class KnowledgeBaseFactory:
         all_distances, all_neighbor_idxs = self.__remove_self_reference_in_neighbours(all_distances, all_neighbor_idxs)
         _, filtered_neighbour_idxs = self.filter_nearest_neighbours(all_distances, all_neighbor_idxs, 1, operator.eq)
         self.save_predicate_obs_list_to_file(filtered_neighbour_idxs,
-                                             f'{self.path_to_save_predicates}/sim_cosine_users_obs.psl')
+                                             f'{self.path_to_save_predicates}/observations/sim_cosine_users.psl')
 
     def _build_sim_mf_euclidean_items_obs(self):
         nbrs = NearestNeighbors(n_neighbors=51, metric='euclidean', n_jobs=4).fit(
@@ -132,7 +131,7 @@ class KnowledgeBaseFactory:
         all_distances, all_neighbor_idxs = nbrs.kneighbors(self.transformed_data.item_latent_space.T)
         all_distances, all_neighbor_idxs = self.__remove_self_reference_in_neighbours(all_distances, all_neighbor_idxs)
         self.save_predicate_obs_list_to_file(all_neighbor_idxs,
-                                             f'{self.path_to_save_predicates}/sim_mf_euclidean_items_obs.psl')
+                                             f'{self.path_to_save_predicates}/observations/sim_mf_euclidean_items.psl')
 
     def _build_sim_mf_euclidean_users_obs(self):
         nbrs = NearestNeighbors(n_neighbors=51, metric='euclidean', n_jobs=4).fit(
@@ -140,7 +139,7 @@ class KnowledgeBaseFactory:
         all_distances, all_neighbor_idxs = nbrs.kneighbors(self.transformed_data.user_latent_space)
         all_distances, all_neighbor_idxs = self.__remove_self_reference_in_neighbours(all_distances, all_neighbor_idxs)
         self.save_predicate_obs_list_to_file(all_neighbor_idxs,
-                                             f'{self.path_to_save_predicates}/sim_mf_euclidean_users_obs.psl')
+                                             f'{self.path_to_save_predicates}/observations/sim_mf_euclidean_users.psl')
 
     def filter_nearest_neighbours(self, all_distances, all_neighbor_idxs, filter_value, filter_operator):
         filtered_distances, filtered_neighbour_idxs = [], []

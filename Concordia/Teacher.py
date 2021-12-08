@@ -7,7 +7,9 @@ from pslpython.rule import Rule
 from distutils.util import strtobool
 import torch
 import pandas as pd
-
+from Experiments.RecommendationsMovieLens.PSLImplementation.DataBase.Facts import Facts  # TODO move to better place
+from Experiments.RecommendationsMovieLens.PSLImplementation.Groundings.HerbrandBase import HerbrandBase
+from Experiments.RecommendationsMovieLens.PSLImplementation.PSL.distribution import *
 
 class Teacher(ABC):
     def __init__(self, knowledge_base_factory, predicates=None, predicates_to_infer=None, **config):
@@ -113,23 +115,39 @@ class PSLTeacher(Teacher):
             self.get_markov_blankets()
 
     def predict(self, teacher_input, target):
-
         if self.config['train_teacher']:
             self.fit(teacher_input, target)
         else:
             self._set_ground_predicates(teacher_input, target)
 
-        results = self.model.infer(additional_cli_optons=self.cli_options, psl_config=self.psl_options)
         predictions = []
-        for predicate in self.predicates_to_infer:
-            if not predicate:
-                predictions.append(torch.Tensor([]))
-            else:
-                psl_predictions = results[self.model.get_predicate(predicate)]\
-                                                    .sort_values(by=[0, 1])\
-                                                    .pivot(index=0, columns=1, values='truth')\
-                                                    .values
-                predictions.append(torch.Tensor(psl_predictions))
+
+        if self.regression:
+            rating_targets_path = f'{self.predicates_folder}/observations/rated.psl'
+            facts = Facts(self.model, 'train')  # TODO change instantiation of Facts
+            for predicate in self.predicates_to_infer:
+                # TODO instantiate HB based on array of predicates of interest
+                herbrand_base = HerbrandBase(self.markov_blanket_file, predicate)
+
+                with open(rating_targets_path) as fp:  # TODO remove and access from self.model
+                    target_predicate_arguments = [tuple(line.strip().split()[:2]) for line in fp.readlines()]
+
+                predictions.append(get_pdf_estimate_of_targets_integration(herbrand_base,
+                                                                           facts,
+                                                                           target_predicate_arguments,
+                                                                           predicate)
+                                   )
+        else:
+            results = self.model.infer(additional_cli_optons=self.cli_options, psl_config=self.psl_options)
+            for predicate in self.predicates_to_infer:
+                if not predicate:
+                    predictions.append(torch.Tensor([]))
+                else:
+                    psl_predictions = results[self.model.get_predicate(predicate)]\
+                                                        .sort_values(by=[0, 1])\
+                                                        .pivot(index=0, columns=1, values='truth')\
+                                                        .values
+                    predictions.append(torch.Tensor(psl_predictions))
         return predictions
 
     def _set_ground_predicates(self, teacher_input, target):

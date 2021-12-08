@@ -60,7 +60,6 @@ def get_pdf_estimate_of_targets_integration(herbrand_base,
                                             facts,
                                             target_predicate_arguments,
                                             target_predicate,
-                                            path_to_save_prob_density_files,
                                             integration_points=np.arange(0, 1.1, 0.1)):
     """
     Returns a probability distribution for each grounded target predicate. The probability distribution is computed
@@ -74,10 +73,6 @@ def get_pdf_estimate_of_targets_integration(herbrand_base,
     """
     estimates = []
     arguments_of_estimates = []
-    i = 1
-    import os
-    if os.path.exists(path_to_save_prob_density_files):
-        os.remove(path_to_save_prob_density_files)
     for arguments in tqdm(target_predicate_arguments):
         grounded_target_predicate = f'{target_predicate}({", ".join(arguments)})'
         grounded_rules = herbrand_base.get_markov_blanket_of_ground_predicate(grounded_target_predicate)
@@ -92,21 +87,7 @@ def get_pdf_estimate_of_targets_integration(herbrand_base,
         potential_dist = np.array(potential_dist) / Z
         estimates.append(potential_dist)
         arguments_of_estimates.append(arguments)
-        if i % 10000 == 0:
-            with open(path_to_save_prob_density_files, 'a') as fp:
-                fp.writelines(
-                    [f"{user_id}\t{item_id}\t{', '.join([str(i) for i in dist])}\n" for (user_id, item_id), dist in
-                     zip(arguments_of_estimates, estimates)])
-            estimates = []
-            arguments_of_estimates = []
-            gc.collect()
-        i+=1
 
-    with open(path_to_save_prob_density_files, 'a') as fp:
-        gc.collect()
-        fp.writelines(
-            [f"{user_id}\t{item_id}\t{', '.join([str(i) for i in dist])}\n" for (user_id, item_id), dist in
-             zip(arguments_of_estimates, estimates)])
     return estimates
 
 
