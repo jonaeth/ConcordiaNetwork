@@ -17,9 +17,7 @@ def extract_movielens_data(data_split, path_to_data):
 
 
 def run(data_fraction):
-    # Config
-    markov_blanket_file_path = config_concordia['markov_blanket']  # CORE_PSL_OUTPUT_FOLDER
-
+    # Load Data
     df_items, df_users, df_ratings_learn = extract_movielens_data('train', 'data/ml-100k')
     _, _, df_ratings_validation = extract_movielens_data('valid', 'data/ml-100k')
     _, _, df_ratings_eval = extract_movielens_data('test', 'data/ml-100k')
@@ -37,8 +35,10 @@ def run(data_fraction):
                                                                       random_state=0)
     training_data_learn = df_users, df_items, df_ratings_learn_obs
 
+    # Build predicate files
     knowledge_base_factory = KnowledgeBaseFactory('teacher/train/')
 
+    # Teacher
     print(f'Running Core PSL inference')
     teacher_psl = PSLTeacher(predicates_to_infer=['rating', None],
                              knowledge_base_factory=knowledge_base_factory,
@@ -46,11 +46,12 @@ def run(data_fraction):
     teacher_psl.fit(training_data_learn, df_ratings_learn_targets)
 
     print(f'Running PSL Distribution inference')
-    merge_observed_and_predicted_data(f'{self.predicates_folder}/truths/rating.psl',
-                                      f'{self.predicates_folder}/observations/rating.psl',
-                                      f'{self.predicates_folder}/observations/rating_concatenated.psl')  # TODO Modestas: Fix Problem!
+    predicates_folder = config_concordia['ground_predicates_path']
+    merge_observed_and_predicted_data(f'{predicates_folder}/truths/rating.psl',
+                                      f'{predicates_folder}/observations/rating.psl',
+                                      f'{predicates_folder}/observations/rating_concatenated.psl')  # TODO Modestas: Fix Problem!
 
-    teacher_psl.predict()
+    predictions = teacher_psl.predict()
     print('inference is done')
     with open(path_to_save_prob_density_files, 'w') as fp:
        fp.writelines([f"{user_id}\t{item_id}\t{', '.join([str(i) for i in dist])}\n" for (user_id, item_id), dist in

@@ -1,7 +1,7 @@
 import numpy as np
 from tqdm import tqdm
 from scipy import integrate
-from PSLImplementation.DataBase.TruthAssignedRule import TruthAssignedRule
+from Experiments.RecommendationsMovieLens.PSLImplementation.DataBase.TruthAssignedRule import TruthAssignedRule
 import gc
 
 def assign_true_values_to_formulas(grounded_formulas, herbrand_interpretation, grounded_target_atom=None):

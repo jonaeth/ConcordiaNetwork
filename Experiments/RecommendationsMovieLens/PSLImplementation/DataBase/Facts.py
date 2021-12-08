@@ -1,123 +1,14 @@
 from collections import defaultdict
-import numpy as np
+from pslpython.partition import Partition
 
 
 class Facts:
-    def __init__(self, facts_file, mode):
-        grounded_predicates_files = self.read_grounded_predicate_files(facts_file,
-                                                                       str(mode)
-                                                                       )
+    def __init__(self, psl_model):
         self.facts_base = defaultdict(dict)
-        for predicate, arity, predicate_data_file in grounded_predicates_files:
-            self.facts_base[predicate] = self.build_predicate_truth_value_mapping(predicate_data_file, arity)
-
-    def build_predicate_truth_value_mapping(self, groundings_path, arity):
-        """
-        Reads the file of a particular predicate which contains observed truth values
-        of a specific grounding, and build a mapping from a specific grounding to predicate truth value.
-        There are 2 input file formats.
-        Format 1 (e.g. Rating(user, item)):
-        '
-        3 \t 101 \t 0.85
-        3 \t 102 \t 0.5
-        .
-        .
-        .
-        952 \t 105 \t 0.57
-        '
-        Format 2 (e.g. rated(user, item), where the truth value is 1):
-        '
-        3 101
-        3 102
-        .
-        .
-        .
-        952 105
-        '
-        :param groundings_path:
-        file path to the truth values of the predicate
-        :param arity:
-        arity of the predicate
-        :return: a dictionary with grounding to truth value of the predicate
-        'constant1_constant2': truth_value
-        e.g.{'3_101': 0.85
-        .
-        .
-        .
-        '952_105': 0.57}
-        """
-        groundings = self.read_file(groundings_path)
-        predicate_truth_value_mapping = {}
-        for line in groundings:
-            line = line.strip()
-            line_split_values = line.split('\t')
-            if arity == 1:
-                arguments = line_split_values[0]
-                # Format 2 style files (see comment above)
-                if len(line_split_values) == 1:
-                    predicate_truth_value_mapping[arguments] = 1
-                # Format 2 style files (see comment above)
-                else:
-                    predicate_truth_value_mapping[arguments] = np.float32(line_split_values[1])
-            if arity == 2:
-                arguments = "_".join(line_split_values[:2])
-                if len(line_split_values) == 2:
-                    predicate_truth_value_mapping[arguments] = 1
-                else:
-                    predicate_truth_value_mapping[arguments] = np.float32(line_split_values[-1])
-
-        return predicate_truth_value_mapping
-
-    def read_grounded_predicate_files(self, src_path, mode):
-        '''
-        Reads predicate groundings file which for each predicate contains paths to its truth values for a specific
-        grounding, and predicate's arity.
-        The paths may contain three different wildcards (see params below):
-        These wildcards are replaced with the provided arguments to this function.
-        The file format:
-        PREDICATE_NAME\arity: Path to the file containing truth values for specific groundings
-        e.g.:
-        SIM_PEARSON_ITEMS/2: Data/Yelp/Transformed/?mode?/sgd_rating_obs.txt
-        These txt files contain, for a specific predicate, data of the form:
-        e.g. Rating(user, item):
-        '
-        3 \t 101 \t 0.85
-        3 \t 102 \t 0.5
-        .
-        .
-        .
-        952 \t 105 \t 0.57
-        '
-        :param src_path:
-        :param mode: string value representing if we want to read PSL train or eval split
-        :return:
-        A list of lists containing predicate name, its arity and path to the file containing truth values:
-        [
-            ['SGD_RATING', 2, Data/Yelp/Transformed/50/0/eval/sgd_rating_obs.txt],
-            ['SIM_COS_ITEMS', 2, Data/Yelp/Transformed/50/0/eval/sim_cosine_items_obs.txt],
-            .
-            .
-            .
-        ]
-        '''
-        with open(src_path) as fp:
-            lines = fp.readlines()
-        return_lines = []
-        for line in lines:
-            line = line.replace('?mode?', mode)
-
-            predicate_arity, data_path = line.strip().split(': ')
-            predicate, arity = predicate_arity.split('/')
-            return_lines.append([predicate.lower(), int(arity), data_path])
-
-        return return_lines
-
-    def read_file(self, src_path):
-        lines = []
-        with open(src_path) as fp:
-            lines += fp.readlines()
-
-        return list(set(lines))
+        for predicate_name, predicate_data in psl_model.get_predicates():
+            self.facts_base[predicate_name] = {'_'.join(row[:-1].astype(str)): row[-1]\
+                                               for row in psl_model.get_predicates()[predicate_name]
+                                                                   .data()[Partition.OBSERVATIONS].values}
 
     def get_truth_value_of_predicate(self, predicate_name, *args):
         if "_".join(args) not in self.facts_base[predicate_name]:

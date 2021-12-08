@@ -11,6 +11,7 @@ from Experiments.RecommendationsMovieLens.PSLImplementation.DataBase.Facts impor
 from Experiments.RecommendationsMovieLens.PSLImplementation.Groundings.HerbrandBase import HerbrandBase
 from Experiments.RecommendationsMovieLens.PSLImplementation.PSL.distribution import *
 
+
 class Teacher(ABC):
     def __init__(self, knowledge_base_factory, predicates=None, predicates_to_infer=None, **config):
         self.knowledge_base_factory = knowledge_base_factory
@@ -114,7 +115,7 @@ class PSLTeacher(Teacher):
         if self.regression:
             self.get_markov_blankets()
 
-    def predict(self, teacher_input, target):
+    def predict(self, teacher_input=None, target=None):
         if self.config['train_teacher']:
             self.fit(teacher_input, target)
         else:
@@ -123,14 +124,14 @@ class PSLTeacher(Teacher):
         predictions = []
 
         if self.regression:
-            rating_targets_path = f'{self.predicates_folder}/observations/rated.psl'
-            facts = Facts(self.model, 'train')  # TODO change instantiation of Facts
+            facts = Facts(self.model)
             for predicate in self.predicates_to_infer:
                 # TODO instantiate HB based on array of predicates of interest
                 herbrand_base = HerbrandBase(self.markov_blanket_file, predicate)
-
-                with open(rating_targets_path) as fp:  # TODO remove and access from self.model
-                    target_predicate_arguments = [tuple(line.strip().split()[:2]) for line in fp.readlines()]
+                target_predicate_df = pd.concat([self.model.get_predicate(predicate).data()[Partition.OBSERVATIONS],
+                                                 self.model.get_predicate(predicate).data()[Partition.TRUTH]])
+                target_predicate_arguments = [tuple(row[:-1]) for row in target_predicate_df.values]
+                # TODO don't turn into array and then access it inside but rather straight as a df
 
                 predictions.append(get_pdf_estimate_of_targets_integration(herbrand_base,
                                                                            facts,
