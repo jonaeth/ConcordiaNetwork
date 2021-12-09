@@ -7,9 +7,9 @@ from pslpython.rule import Rule
 from distutils.util import strtobool
 import torch
 import pandas as pd
-from Experiments.RecommendationsMovieLens.PSLImplementation.DataBase.Facts import Facts  # TODO move to better place
-from Experiments.RecommendationsMovieLens.PSLImplementation.Groundings.HerbrandBase import HerbrandBase
-from Experiments.RecommendationsMovieLens.PSLImplementation.PSL.distribution import *
+from Concordia.PSLImplementation.DataBase.Facts import Facts  # TODO move to better place
+from Concordia.PSLImplementation import HerbrandBase
+from Concordia.PSLImplementation import *
 
 
 class Teacher(ABC):

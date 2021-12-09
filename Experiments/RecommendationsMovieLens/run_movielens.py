@@ -1,9 +1,7 @@
 from Concordia.Teacher import PSLTeacher
 from DataLoader import DataLoader
-from HyperTransformations.DataTransformation import DataTransformation
 from Experiments.RecommendationsMovieLens.KnowledgeBaseFactory import KnowledgeBaseFactory
 from sklearn.model_selection import train_test_split
-from run_psl import run as run_core_psl
 import pandas as pd
 from config_concordia import config_concordia
 data_split = 'train'
