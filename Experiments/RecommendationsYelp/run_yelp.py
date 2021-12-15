@@ -32,23 +32,9 @@ def run(data_fraction):
 
     print(f'Running PSL Distribution inference')
     predicates_folder = config_concordia['ground_predicates_path']
-    merge_observed_and_predicted_data(f'{predicates_folder}/truths/rating.psl',
-                                      f'{predicates_folder}/observations/rating.psl',
-                                      f'{predicates_folder}/observations/rating_concatenated.psl')  # TODO Modestas: Fix Problem!
 
     predictions = teacher_psl.predict()
     print('inference is done')
-    with open(path_to_save_prob_density_files, 'w') as fp:
-        fp.writelines([f"{user_id}\t{item_id}\t{', '.join([str(i) for i in dist])}\n" for (user_id, item_id), dist in
-                       zip(target_predicate_arguments, prob_estimations)])
-
-    # print(f'Running PSL Distribution inference')
-    #
-    # predict_psl_distribution(fold_nr=0, data_fraction=data_fraction,
-    #                          psl_prediction_folder='core_psl_predictions/yelp',
-    #                          output_folder='psl_distribution_predictions/yelp',
-    #                          path_to_predicate_file='paths_to_predicate_data.txt')
-
 
 # run(5)
 # run(10)
