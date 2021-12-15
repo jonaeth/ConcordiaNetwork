@@ -15,13 +15,6 @@ def extract_movielens_data(data_split, path_to_data):
     return df_movies, df_users, df_ratings
 
 
-def merge_observed_and_predicted_data(psl_pred_path, rating_obs_path, output):
-    df_pred = pd.read_csv(psl_pred_path, sep='\t', header=None)
-    df_ratings_obs = pd.read_csv(rating_obs_path, sep='\t', header=None)
-    df = pd.concat([df_pred, df_ratings_obs]).drop_duplicates()
-    df.to_csv(output, sep='\t', header=None, index=False)
-
-
 def run(data_fraction):
     # Load Data
     path_to_data = "Experiments/RecommendationsMovieLens/data"
