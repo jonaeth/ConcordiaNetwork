@@ -16,8 +16,8 @@ def build_pearson_sim_predicates(train_data, path_to_save):
     sim_users_pearson = user_based_model.get_similar_items(k=50)
     sim_items_pearson = item_based_model.get_similar_items(k=50)
 
-    sim_users_pearson.to_dataframe()[['user_id', 'similar']].to_csv(f'{path_to_save}/sim_pearson_users_obs.psl', header=False, index=False, sep='\t')
-    sim_items_pearson.to_dataframe()[['item_id', 'similar']].to_csv(f'{path_to_save}/sim_pearson_items_obs.psl', header=False, index=False, sep='\t')
+    sim_users_pearson.to_dataframe()[['user_id', 'similar']].to_csv(f'{path_to_save}/observations/sim_pearson_users.psl', header=False, index=False, sep='\t')
+    sim_items_pearson.to_dataframe()[['item_id', 'similar']].to_csv(f'{path_to_save}/observations/sim_pearson_items.psl', header=False, index=False, sep='\t')
 
 
 def build_sim_cosine_items(train_data, path_to_save):
@@ -25,7 +25,7 @@ def build_sim_cosine_items(train_data, path_to_save):
                                                                          item_id='item_id', target='rating',
                                                                          similarity_type='cosine')
     sim_items_cosine = item_based_model.get_similar_items(k=50)
-    sim_items_cosine.to_dataframe()[['item_id', 'similar']].to_csv(f'{path_to_save}/sim_cosine_items_obs.psl', header=False, index=False, sep='\t')
+    sim_items_cosine.to_dataframe()[['item_id', 'similar']].to_csv(f'{path_to_save}/observations/sim_cosine_items.psl', header=False, index=False, sep='\t')
 
 
 def build_sim_cosine_users(train_data, path_to_save):
@@ -33,7 +33,7 @@ def build_sim_cosine_users(train_data, path_to_save):
                                                                          item_id='user_id', target='rating',
                                                                          similarity_type='cosine')
     sim_users_cosine = user_based_model.get_similar_items(k=50)
-    sim_users_cosine.to_dataframe()[['user_id', 'similar']].to_csv(f'{path_to_save}/sim_cosine_users_obs.psl',
+    sim_users_cosine.to_dataframe()[['user_id', 'similar']].to_csv(f'{path_to_save}/observations/sim_cosine_users.psl',
                                                                     header=False, index=False, sep='\t')
 
 
@@ -49,7 +49,7 @@ def build_pearson_items_predictions(train_data, test_data, path_to_save):
     test_data_df['pearson_predictions'] = test_data_df['pearson_predictions'].clip(0, 5)
     train_data_df['pearson_predictions'] = train_data_df['pearson_predictions'].clip(0, 5)
     df = pd.concat([train_data_df, test_data_df])
-    df[['user_id', 'item_id', 'pearson_predictions']].to_csv(f'{path_to_save}/item_pearson_rating_obs.psl', header=None, index=False, sep='\t')
+    df[['user_id', 'item_id', 'pearson_predictions']].to_csv(f'{path_to_save}/observations/item_pearson_rating.psl', header=None, index=False, sep='\t')
 
 
 def build_sim_mf_cosine_users(train_data, path_to_save):
@@ -57,7 +57,7 @@ def build_sim_mf_cosine_users(train_data, path_to_save):
                                                                          item_id='user_id', target='rating',
                                                                          num_factors=8, max_iterations=10)
     sim_users_cosine = user_mf_cosine_model.get_similar_items(k=50)
-    sim_users_cosine.to_dataframe()[['user_id', 'similar']].to_csv(f'{path_to_save}/sim_mf_cosine_users_obs.psl',
+    sim_users_cosine.to_dataframe()[['user_id', 'similar']].to_csv(f'{path_to_save}/observations/sim_mf_cosine_users.psl',
                                                                     header=False, index=False, sep='\t')
 
 
@@ -66,7 +66,7 @@ def build_sim_mf_cosine_items(train_data, path_to_save):
                                                                          item_id='item_id', target='rating',
                                                                          num_factors=8, max_iterations=10)
     sim_users_cosine = user_mf_cosine_model.get_similar_items(k=50)
-    sim_users_cosine.to_dataframe()[['item_id', 'similar']].to_csv(f'{path_to_save}/sim_mf_cosine_items_obs.psl',
+    sim_users_cosine.to_dataframe()[['item_id', 'similar']].to_csv(f'{path_to_save}/observations/sim_mf_cosine_items.psl',
                                                                    header=False, index=False, sep='\t')
 
 
@@ -84,7 +84,7 @@ def build_mf_sgd_predictions(train_data, test_data, path_to_save):
     test_data_df['sgd_predictions'] = test_data_df['sgd_predictions'].clip(0, 5)
     train_data_df['sgd_predictions'] = train_data_df['sgd_predictions'].clip(0, 5)
     df = pd.concat([train_data_df, test_data_df])
-    df[['user_id', 'item_id', 'sgd_predictions']].to_csv(f'{path_to_save}/sgd_rating_obs.psl',
+    df[['user_id', 'item_id', 'sgd_predictions']].to_csv(f'{path_to_save}/observations/sgd_rating.psl',
                                                          header=None,
                                                          index=False, sep='\t')
 
@@ -96,8 +96,8 @@ def create_an_empty_file(path_to_data):
 
 def compute_predicates(path_to_data):
 
-    path_to_train = f'{path_to_data}/rating_obs.psl'
-    path_to_test = f'{path_to_data}/rating_truth.psl'
+    path_to_train = f'{path_to_data}/observations/rating.psl'
+    path_to_test = f'{path_to_data}/truths/rating.psl'
     train_data_learn_df = pd.read_csv(path_to_train, header=None, names=['user_id', 'item_id', 'rating'], sep='\t')
     test_data_learn_df = pd.read_csv(path_to_test, header=None, names=['user_id', 'item_id', 'rating'], sep='\t')
 
@@ -116,8 +116,8 @@ def compute_predicates(path_to_data):
 
 
 def rate_with_bpmf(train_data_learn_df, test_data_learn_df, path_to_data):
-    df_user = pd.read_csv(f"{path_to_data}/user_obs.psl", header=None, names=['user_id'], sep='\t')
-    df_item = pd.read_csv(f"{path_to_data}/item_obs.psl", header=None, names=['user_id'], sep='\t')
+    df_user = pd.read_csv(f"{path_to_data}/observations/user.psl", header=None, names=['user_id'], sep='\t')
+    df_item = pd.read_csv(f"{path_to_data}/observations/item.psl", header=None, names=['user_id'], sep='\t')
     nr_of_users = len(df_user)
     nr_of_items = len(df_item)
     rating_train_matrix = __build_csr_matrix_from_ratings(train_data_learn_df, nr_of_users, nr_of_items)
@@ -131,7 +131,7 @@ def rate_with_bpmf(train_data_learn_df, test_data_learn_df, path_to_data):
         verbose=0)
     predictions = trainSession.run()
     y_predictions = [(prediction.coords[0], prediction.coords[1], prediction.pred_avg) for prediction in predictions]
-    pd.DataFrame(y_predictions).to_csv(f"{path_to_data}/bpmf_rating_obs.psl", sep='\t', header=False, index=False)
+    pd.DataFrame(y_predictions).to_csv(f"{path_to_data}/observations/bpmf_rating.psl", sep='\t', header=False, index=False)
 
 
 def __build_csr_matrix_from_ratings(df_ratings, n_users, n_items):

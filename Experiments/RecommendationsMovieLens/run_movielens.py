@@ -6,6 +6,7 @@ import pandas as pd
 from config_concordia import config_concordia
 data_split = 'train'
 
+
 def extract_movielens_data(data_split, path_to_data):
     data_exctracted = DataLoader(data_split, path_to_data)
     df_movies = data_exctracted.df_movies
@@ -14,11 +15,19 @@ def extract_movielens_data(data_split, path_to_data):
     return df_movies, df_users, df_ratings
 
 
+def merge_observed_and_predicted_data(psl_pred_path, rating_obs_path, output):
+    df_pred = pd.read_csv(psl_pred_path, sep='\t', header=None)
+    df_ratings_obs = pd.read_csv(rating_obs_path, sep='\t', header=None)
+    df = pd.concat([df_pred, df_ratings_obs]).drop_duplicates()
+    df.to_csv(output, sep='\t', header=None, index=False)
+
+
 def run(data_fraction):
     # Load Data
-    df_items, df_users, df_ratings_learn = extract_movielens_data('train', 'data/ml-100k')
-    _, _, df_ratings_validation = extract_movielens_data('valid', 'data/ml-100k')
-    _, _, df_ratings_eval = extract_movielens_data('test', 'data/ml-100k')
+    path_to_data = "Experiments/RecommendationsMovieLens/data"
+    df_items, df_users, df_ratings_learn = extract_movielens_data('train', path_to_data)
+    _, _, df_ratings_validation = extract_movielens_data('valid', path_to_data)
+    _, _, df_ratings_eval = extract_movielens_data('test', path_to_data)
 
     print(f'nr_items {len(df_items)}')
     print(f'nr_users {len(df_users)}')
@@ -34,26 +43,20 @@ def run(data_fraction):
     training_data_learn = df_users, df_items, df_ratings_learn_obs
 
     # Build predicate files
-    knowledge_base_factory = KnowledgeBaseFactory('teacher/train/')
+    knowledge_base_factory = KnowledgeBaseFactory('Experiments/RecommendationsMovieLens/teacher/train')
 
     # Teacher
     print(f'Running Core PSL inference')
-    teacher_psl = PSLTeacher(predicates_to_infer=['rating', None],
+    teacher_psl = PSLTeacher(predicates_to_infer=['rating'],
                              knowledge_base_factory=knowledge_base_factory,
                              **config_concordia)
     teacher_psl.fit(training_data_learn, df_ratings_learn_targets)
 
     print(f'Running PSL Distribution inference')
     predicates_folder = config_concordia['ground_predicates_path']
-    merge_observed_and_predicted_data(f'{predicates_folder}/truths/rating.psl',
-                                      f'{predicates_folder}/observations/rating.psl',
-                                      f'{predicates_folder}/observations/rating_concatenated.psl')  # TODO Modestas: Fix Problem!
 
     predictions = teacher_psl.predict()
     print('inference is done')
-    with open(path_to_save_prob_density_files, 'w') as fp:
-       fp.writelines([f"{user_id}\t{item_id}\t{', '.join([str(i) for i in dist])}\n" for (user_id, item_id), dist in
-                      zip(target_predicate_arguments, prob_estimations)])
 
 #run(5)
 #run(10)

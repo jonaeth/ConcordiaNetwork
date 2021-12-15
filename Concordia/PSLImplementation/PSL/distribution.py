@@ -74,7 +74,7 @@ def get_pdf_estimate_of_targets_integration(herbrand_base,
     estimates = []
     arguments_of_estimates = []
     for arguments in tqdm(target_predicate_arguments):
-        grounded_target_predicate = f'{target_predicate}({", ".join(arguments)})'
+        grounded_target_predicate = f'{target_predicate}({", ".join([str(arg) for arg in arguments])})'
         grounded_rules = herbrand_base.get_markov_blanket_of_ground_predicate(grounded_target_predicate)
         evaluated_formulas = assign_true_values_to_formulas(grounded_rules, facts,
                                                             grounded_target_atom=grounded_target_predicate)

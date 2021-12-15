@@ -1,5 +1,5 @@
 from collections import defaultdict
-from PSLImplementation.DataBase.Rule import Rule
+from Concordia.PSLImplementation.DataBase.Rule import Rule
 
 
 class HerbrandBase:

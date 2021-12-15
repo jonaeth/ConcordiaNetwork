@@ -7,8 +7,7 @@ from pslpython.rule import Rule
 from distutils.util import strtobool
 import torch
 import pandas as pd
-from Concordia.PSLImplementation.DataBase.Facts import Facts  # TODO move to better place
-from Concordia.PSLImplementation import HerbrandBase
+from Concordia.PSLImplementation.Groundings.HerbrandBase import HerbrandBase
 from Concordia.PSLImplementation import *
 
 
@@ -118,21 +117,24 @@ class PSLTeacher(Teacher):
     def predict(self, teacher_input=None, target=None):
         if self.config['train_teacher']:
             self.fit(teacher_input, target)
-        else:
+        elif teacher_input and target:
             self._set_ground_predicates(teacher_input, target)
 
         predictions = []
 
         if self.regression:
             facts = Facts(self.model)
+            psl_map_inference = self.model.infer(additional_cli_optons=self.cli_options, psl_config=self.psl_options)
+
             for predicate in self.predicates_to_infer:
+                map_estimates = psl_map_inference[self.model.get_predicate(predicate)].rename({'truth': 2}, axis=1)
+                self.model.get_predicate(predicate).add_data(Partition.OBSERVATIONS, map_estimates)
                 # TODO instantiate HB based on array of predicates of interest
-                herbrand_base = HerbrandBase(self.markov_blanket_file, predicate)
+                herbrand_base = HerbrandBase(self.predicates_folder + self.markov_blanket_file, predicate)
                 target_predicate_df = pd.concat([self.model.get_predicate(predicate).data()[Partition.OBSERVATIONS],
-                                                 self.model.get_predicate(predicate).data()[Partition.TRUTH]])
+                                                 map_estimates])
                 target_predicate_arguments = [tuple(row[:-1]) for row in target_predicate_df.values]
                 # TODO don't turn into array and then access it inside but rather straight as a df
-
                 predictions.append(get_pdf_estimate_of_targets_integration(herbrand_base,
                                                                            facts,
                                                                            target_predicate_arguments,
@@ -178,7 +180,7 @@ class PSLTeacher(Teacher):
         for predicate in self.predicates_to_infer:
             target_atoms = pd.concat([self.model.get_predicate(predicate).data()[Partition.OBSERVATIONS],
                                       self.model.get_predicate(predicate).data()[Partition.TARGETS]]).iloc[:, :-1]
-            self.model.get_predicate(predicate).add_data(Partition.TARGETS, target_atoms)
+            self.model.get_predicate(predicate).clear_data().add_data(Partition.TARGETS, target_atoms)
         self.model.infer(additional_cli_optons=
                          ['--groundrules', self.predicates_folder + self.markov_blanket_file] + self.cli_options,
                          jvm_options=self.jvm_options)
