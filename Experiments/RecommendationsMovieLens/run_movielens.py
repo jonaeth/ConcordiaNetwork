@@ -1,9 +1,16 @@
 from Concordia.Teacher import PSLTeacher
+from Concordia.Student import Student
+from Concordia.ConcordiaNetwork import ConcordiaNetwork
+from metrics_and_loss import L2_RMSE_LOSS, RMSE_LOSS
+from torch.optim import Adam
+from torch.utils import data
 from DataLoader import DataLoader
 from Experiments.RecommendationsMovieLens.KnowledgeBaseFactory import KnowledgeBaseFactory
 from sklearn.model_selection import train_test_split
 import pandas as pd
 from config_concordia import config_concordia
+from neural_network_models.ncf import NCF
+from config import neural_network_config, optimiser_config, concordia_config
 data_split = 'train'
 
 
@@ -15,8 +22,28 @@ def extract_movielens_data(data_split, path_to_data):
     return df_movies, df_users, df_ratings
 
 
+class MovieLensDataset(data.Dataset):
+    def __init__(self, ratings_df, psl_predictions=None):
+        self.x, self.y = self._split_rating_data_to_xy(ratings_df)
+        self.psl_predictions = psl_predictions[0][1][:len(self.x)] if psl_predictions else None #This is rather hacky
+
+    def __len__(self):
+        return len(self.x)
+
+    def __getitem__(self, index):
+        if self.psl_predictions:
+            return self.x[index], [self.psl_predictions[index]], self.y[index]
+        else:
+            return self.x[index], self.y[index]
+
+    def _split_rating_data_to_xy(self, df_ratings):
+        x = df_ratings[['user_id', 'item_id']].values
+        y = df_ratings[['rating']].values
+        return x, y
+
 def run(data_fraction):
     # Load Data
+    data_fraction = 1
     path_to_data = "Experiments/RecommendationsMovieLens/data"
     df_items, df_users, df_ratings_learn = extract_movielens_data('train', path_to_data)
     _, _, df_ratings_validation = extract_movielens_data('valid', path_to_data)
@@ -24,6 +51,8 @@ def run(data_fraction):
 
     print(f'nr_items {len(df_items)}')
     print(f'nr_users {len(df_users)}')
+    num_users = len(df_users)
+    num_items = len(df_items)
     print(f'nr_ratings {len(df_ratings_learn) + len(df_ratings_validation) + len(df_ratings_eval)}')
 
     df_ratings_learn = pd.concat([df_ratings_learn, df_ratings_validation])
@@ -46,10 +75,30 @@ def run(data_fraction):
     teacher_psl.fit(training_data_learn, df_ratings_learn_targets)
 
     print(f'Running PSL Distribution inference')
-    predicates_folder = config_concordia['ground_predicates_path']
 
-    predictions = teacher_psl.predict()
+    psl_predictions = teacher_psl.predict()
+
+    neural_network_config['num_users'] = num_users
+    neural_network_config['num_items'] = num_items
+
+    base_neural_network = NCF(**neural_network_config)
+    params = list(filter(lambda p: p.requires_grad, base_neural_network.parameters()))
+    optimizer = Adam(params, lr=optimiser_config['lr'])
+
+    student_nn = Student(base_neural_network, RMSE_LOSS, optimizer)
+
+    training_data = MovieLensDataset(df_ratings_learn_obs, psl_predictions)
+    validation_data = MovieLensDataset(df_ratings_validation)
+
+    training_loader = data.DataLoader(training_data, batch_size=optimiser_config['batch_size'])
+    validation_loader = data.DataLoader(validation_data)
+
+    concordia_network = ConcordiaNetwork(student_nn, teacher_psl, **concordia_config)
+
+    concordia_network.fit(training_loader, validation_loader)
     print('inference is done')
+    concordia_network.predict()
+
 
 #run(5)
 #run(10)

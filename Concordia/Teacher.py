@@ -131,15 +131,13 @@ class PSLTeacher(Teacher):
                 self.model.get_predicate(predicate).add_data(Partition.OBSERVATIONS, map_estimates)
                 # TODO instantiate HB based on array of predicates of interest
                 herbrand_base = HerbrandBase(self.predicates_folder + self.markov_blanket_file, predicate)
-                target_predicate_df = pd.concat([self.model.get_predicate(predicate).data()[Partition.OBSERVATIONS],
-                                                 map_estimates])
+                target_predicate_df = self.model.get_predicate(predicate).data()[Partition.OBSERVATIONS]
                 target_predicate_arguments = [tuple(row[:-1]) for row in target_predicate_df.values]
                 # TODO don't turn into array and then access it inside but rather straight as a df
                 predictions.append(get_pdf_estimate_of_targets_integration(herbrand_base,
                                                                            facts,
                                                                            target_predicate_arguments,
-                                                                           predicate)
-                                   )
+                                                                           predicate))
         else:
             results = self.model.infer(additional_cli_optons=self.cli_options, psl_config=self.psl_options)
             for predicate in self.predicates_to_infer:
@@ -177,13 +175,20 @@ class PSLTeacher(Teacher):
             grounded_predicates.append(predicate)
 
     def get_markov_blankets(self):
+        old_data_state = {}
         for predicate in self.predicates_to_infer:
-            target_atoms = pd.concat([self.model.get_predicate(predicate).data()[Partition.OBSERVATIONS],
-                                      self.model.get_predicate(predicate).data()[Partition.TARGETS]]).iloc[:, :-1]
-            self.model.get_predicate(predicate).clear_data().add_data(Partition.TARGETS, target_atoms)
+            observations = self.model.get_predicate(predicate).data()[Partition.OBSERVATIONS]
+            targets = self.model.get_predicate(predicate).data()[Partition.TARGETS]
+            old_data_state[predicate] = [observations, targets]
+            all_predicate_arguments = pd.concat([observations, targets]).iloc[:, :-1]
+            self.model.get_predicate(predicate).clear_data().add_data(Partition.TARGETS, all_predicate_arguments)
         self.model.infer(additional_cli_optons=
                          ['--groundrules', self.predicates_folder + self.markov_blanket_file] + self.cli_options,
                          jvm_options=self.jvm_options)
+        for predicate in self.predicates_to_infer:
+            observations, targets = old_data_state[predicate]
+            self.model.get_predicate(predicate).clear_data().add_data(Partition.OBSERVATIONS, observations)
+            self.model.get_predicate(predicate).add_data(Partition.TARGETS, targets)
 
 
 class MLNTeacher(Teacher):

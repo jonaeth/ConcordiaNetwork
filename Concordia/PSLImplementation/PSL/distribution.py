@@ -88,6 +88,6 @@ def get_pdf_estimate_of_targets_integration(herbrand_base,
         estimates.append(potential_dist)
         arguments_of_estimates.append(arguments)
 
-    return estimates
+    return arguments_of_estimates, estimates
 
 
