@@ -1,7 +1,7 @@
 from Concordia.Teacher import PSLTeacher
 from Concordia.Student import Student
 from Concordia.ConcordiaNetwork import ConcordiaNetwork
-from metrics_and_loss import L2_RMSE_LOSS, RMSE_LOSS
+from metrics_and_loss import L2_RMSE_LOSS, RMSE_LOSS, custom_RMSE_LOSS
 from torch.optim import Adam
 from torch.utils import data
 from DataLoader import DataLoader
@@ -43,8 +43,9 @@ class MovieLensDataset(data.Dataset):
 
 def run(data_fraction):
     # Load Data
-    data_fraction = 1
+    data_fraction = 100
     path_to_data = "Experiments/RecommendationsMovieLens/data"
+
     df_items, df_users, df_ratings_learn = extract_movielens_data('train', path_to_data)
     _, _, df_ratings_validation = extract_movielens_data('valid', path_to_data)
     _, _, df_ratings_eval = extract_movielens_data('test', path_to_data)
@@ -88,14 +89,14 @@ def run(data_fraction):
     student_nn = Student(base_neural_network, RMSE_LOSS, optimizer)
 
     training_data = MovieLensDataset(df_ratings_learn_obs, psl_predictions)
-    validation_data = MovieLensDataset(df_ratings_validation)
+    validation_data = MovieLensDataset(df_ratings_eval)
 
     training_loader = data.DataLoader(training_data, batch_size=optimiser_config['batch_size'])
     validation_loader = data.DataLoader(validation_data)
 
     concordia_network = ConcordiaNetwork(student_nn, teacher_psl, **concordia_config)
 
-    concordia_network.fit(training_loader, validation_loader)
+    concordia_network.fit(training_loader, validation_loader, metrics={'RMSE_LOSS': custom_RMSE_LOSS})
     print('inference is done')
     concordia_network.predict()
 

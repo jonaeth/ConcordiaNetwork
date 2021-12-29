@@ -1,0 +1,11 @@
+gpu_device :  False
+train_online :  False
+regression :  True
+teacher_student_distributions_comparison :  [True]
+log_path :  Experiments/RecommendationsMovieLens/logs/log_2021_12_29_14_15_20.txt
+Epoch Log:
+ RMSE LOSS: 1.4171947240829468 LOSS: 0.8424495822262197 EVALUATION STEP: Training EPOCH NR: 1
+Epoch Log:
+ RMSE LOSS: 0.9919337034225464 LOSS: 0.9919337196588516 EVALUATION STEP: Test EPOCH NR: 1 EPOCH: {'RMSE_LOSS': 0.9919337, 'loss': 0.9919337196588516, 'evaluation_step': 'Test', 'epoch_nr': 1, 'Epoch': {...}}
+Epoch Log:
+ RMSE LOSS: 0.8748213648796082 LOSS: 0.47174046200714886 EVALUATION STEP: Training EPOCH NR: 2

@@ -1,0 +1,5 @@
+gpu_device :  False
+train_online :  False
+regression :  True
+teacher_student_distributions_comparison :  [True]
+log_path :  Experiments/RecommendationsMovieLens/logs/log_2021_12_29_14_14_10.txt

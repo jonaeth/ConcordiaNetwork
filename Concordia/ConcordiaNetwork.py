@@ -1,10 +1,8 @@
 import torch
 from tqdm import tqdm
-from collections import defaultdict
-import numpy as np
 from Concordia.utils.torch_losses import kl_divergence
 from Concordia.MixtureOfExperts import MixtureOfExperts
-
+from Concordia.Logger import Logger
 
 class ConcordiaNetwork:
     def __init__(self, student, teacher=None, **config):
@@ -15,29 +13,35 @@ class ConcordiaNetwork:
         #self.mixture_of_experts_model = MixtureOfExperts(config['image_vector_length']) #TODO Figure this out!
         self.train_online = config['train_online']
         self.regression = config['regression']
+        self.logger = Logger(config, config['log_path'])
+        self._epoch = 0
 
     def fit(self, train_data_loader, val_data_loader, epochs=10, callbacks=[], metrics={}):
         for epoch in range(1, epochs+1):
+            self._epoch = epoch
             if self.train_online:
                 batches_metrics = self._fit_online(train_data_loader, metrics)
             else:
                 batches_metrics = self._fit_precomputed_teacher_predictions(train_data_loader, metrics)
-            epoch_log = self._build_epoch_log(batches_metrics, 'Training')
-            self._run_callbacks(callbacks, 'epoch_end', epoch_log, epoch)
-            self._evaluate_student(val_data_loader, epoch, callbacks, metrics)
+            epoch_log = self.logger.build_epoch_log(batches_metrics, 'Training', self._epoch)
+            self.logger.print_epoch_log(epoch_log)
+            self._run_callbacks(callbacks, 'epoch_end', epoch_log)
+            self._evaluate_student(val_data_loader, callbacks, metrics)
 
     def _fit_precomputed_teacher_predictions(self, train_data_loader, metrics=None):
         batches_metrics = []
-        for training_input, teacher_prediction, target in tqdm(train_data_loader):
-            student_prediction = self.student.predict(self._to_device(training_input))
-            loss = self.compute_loss(student_prediction,
-                                     self._to_device(teacher_prediction),
-                                     self._to_device(target))
-            self.student.fit(loss)
-            batches_metrics.append(self._get_batch_metrics(self._detach_variables(student_prediction),
-                                                           target,
-                                                           metrics,
-                                                           loss.item()))
+        with tqdm(train_data_loader) as t:
+            for training_input, teacher_prediction, target in t:
+                student_prediction = self.student.predict(self._to_device(training_input))
+                loss = self.compute_loss(student_prediction,
+                                         self._to_device(teacher_prediction),
+                                         self._to_device(target))
+                self.student.fit(loss)
+                batches_metrics.append(self._get_batch_metrics(self._detach_variables(student_prediction),
+                                                               target,
+                                                               metrics,
+                                                               loss.item()))
+                t.set_postfix(self.logger.build_epoch_log(batches_metrics, 'Training', self._epoch))
         return batches_metrics
 
     def _fit_online(self, train_data_loader, metrics=None):
@@ -93,34 +97,28 @@ class ConcordiaNetwork:
         custom_metrics_batch['loss'] = loss
         return custom_metrics_batch
 
-    def _evaluate_student(self, val_data_loader, epoch, callbacks=None, metrics=None):
+    def _evaluate_student(self, val_data_loader, callbacks=None, metrics=None):
         batches_metrics = []
-        for validation_input, target in tqdm(val_data_loader):
+        t = tqdm(val_data_loader)
+        for validation_input, target in t:
             student_prediction = self.student.predict(validation_input)
             if self.regression:
                 loss = self.student.loss_fn(student_prediction[0], target)
             else:
                 loss = self.student.loss_fn(student_prediction, target)
             batches_metrics.append(self._get_batch_metrics(student_prediction, target, metrics, loss.item()))
-        epoch_log = self._build_epoch_log(batches_metrics, 'Test')
-        self._run_callbacks(callbacks, 'epoch_end', epoch_log, epoch)
+            t.set_postfix(self.logger.build_epoch_log(batches_metrics, 'Validation', self._epoch))
 
-    # TODO move this to another class potentially, Logging class?
-    def _build_epoch_log(self, batches_metrics, evaluation_step):
-        wide_batch_metrics = defaultdict(list)
-        for batch_metrics in batches_metrics:
-            for metric_name, metric_val in batch_metrics.items():
-                wide_batch_metrics[metric_name].append(metric_val)
-        logs = {}
-        for metric_name, metric_values_per_batch in wide_batch_metrics.items():
-            logs[metric_name] = np.mean(metric_values_per_batch)
-        logs['evaluation_step'] = evaluation_step
-        return logs
+        epoch_log = self.logger.build_epoch_log(batches_metrics, 'Test', self._epoch)
+        epoch_log['Epoch'] = epoch_log
+        self.logger.print_epoch_log(epoch_log)
 
-    def _run_callbacks(self, callbacks, training_loop_status, logs, epoch):
+        self._run_callbacks(callbacks, 'epoch_end', epoch_log)
+
+    def _run_callbacks(self, callbacks, training_loop_status, logs):
         for callback in callbacks:
             if training_loop_status == 'epoch_end':
-                callback.on_epoch_end(epoch, logs)
+                callback.on_epoch_end(self._epoch, logs)
 
     def _evaluate_custom_metrics(self, student_predictions, targets, metrics):
         metric_results = {}
@@ -128,5 +126,5 @@ class ConcordiaNetwork:
             return metric_results
         for metric_name, metric_fn in metrics.items():
             val = metric_fn(student_predictions, targets)
-            metric_results[metric_name] = val
+            metric_results[metric_name] = val.detach().numpy()
         return metric_results
