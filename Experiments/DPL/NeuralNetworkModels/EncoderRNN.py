@@ -1,3 +1,9 @@
+from GlobalAttention import GlobalAttention
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+
 class EncoderRNN(nn.Module):
     def __init__(self, embed_size, hidden_size, vocab_size, num_layers, cell, wordvec, class_label):
         """Set the hyper-parameters and build the layers."""
