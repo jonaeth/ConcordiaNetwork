@@ -16,6 +16,7 @@
 /Experiments/CollectiveActivity/data/**
 /Experiments/RecommendationsMovieLens/teacher/train/**
 /Experiments/RecommendationsMovieLens/teacher/test/**
+/Experiments/data/**
 
 /Experiments/CollectiveActivity/result/**
 .DS_Store
