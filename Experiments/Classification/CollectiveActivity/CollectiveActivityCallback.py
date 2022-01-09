@@ -1,5 +1,5 @@
 from Concordia.utils.Callback import Callback
-from Experiments.CollectiveActivity.logging import *
+from Experiments.Classification.CollectiveActivity.logging import *
 
 
 class CollectiveActivityCallback(Callback):

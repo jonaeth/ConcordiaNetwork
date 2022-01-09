@@ -12,11 +12,17 @@
 *.xml
 *.iml
 *.pyc
+*_mtx.txt 
 
-/Experiments/CollectiveActivity/data/**
-/Experiments/RecommendationsMovieLens/teacher/train/**
-/Experiments/RecommendationsMovieLens/teacher/test/**
+/Experiments/Classification/CollectiveActivity/data/**
+/Experiments/Regression/RecommendationsMovieLens/teacher/train/**
+/Experiments/Regression/RecommendationsMovieLens/teacher/test/**
+/Experiments/Regression/RecommendationsMovieLens/data/**
+/Experiments/Regression/RecommendationsYelp/data/**
+/Experiments/Regression/RecommendationsYelp/teacher/train/**
+/Experiments/Regression/RecommendationsYelp/teacher/test/**
 
-/Experiments/CollectiveActivity/result/**
+
+/Experiments/Classification/CollectiveActivity/result/**
 .DS_Store
 trainmarkov_blanket.psl

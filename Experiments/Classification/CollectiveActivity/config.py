@@ -80,7 +80,7 @@ class Config(object):
         self.start_psl_at_epoch = 5
 
         self.load_learned_psl = False
-        self.psl_model_path = './'
+        self.psl_model_path = '/'
 
         self.rule_25_doing_groundings = 'truth'
 
