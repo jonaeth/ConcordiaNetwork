@@ -22,14 +22,14 @@ def load_arguments():
     parser.add_argument('--log_interval', type=int, default=100, metavar='N',
                         help='how many batches to wait before logging training status')
     parser.add_argument('--word_embedding', type=str,
-                        default='/home/jonathan/CollaborativeNetwork/Experiments/DPLpy3/data/pubmed_parsed/embedding_vec_gene.pkl',
+                        default='Experiments/DPL/data/pubmed_parsed/embedding_vec_gene.pkl',
                         help='initial word embedding file')
     parser.add_argument('--classifier_type', type=str, default="rnn",
                         help='the classifier type')
     parser.add_argument('--windowSize', type=int, default=5,
                         help='the window size')
     parser.add_argument('--dataroot', type=str,
-                        default='/home/jonathan/CollaborativeNetwork/Experiments/DPLpy3/data/pubmed_parsed',
+                        default='Experiments/DPL/data/pubmed_parsed',
                         help='the data root')
     parser.add_argument('--train_data', type=str, default='chunk_train_41_gene.pkl',
                         help='train data')
@@ -38,7 +38,7 @@ def load_arguments():
     parser.add_argument('--test_data', type=str, default='test_gene_1_soft.pkl',
                         help='test data')
     parser.add_argument('--vocab_path', type=str,
-                        default="/home/jonathan/CollaborativeNetwork/Experiments/DPLpy3/data/pubmed_parsed/vocab_gene.pkl",
+                        default="Experiments/DPL/data/pubmed_parsed/vocab_gene.pkl",
                         help='the vocab path')
     parser.add_argument('--embed_size', type=int, default=200,
                         help='the initial word embedding size')
@@ -51,7 +51,7 @@ def load_arguments():
     parser.add_argument('--initial_model', type=str, default='',
                         help='the current entity type we are trained on')
     parser.add_argument('--save_path', type=str,
-                        default='/home/jonathan/CollaborativeNetwork/Experiments/DPLpy3/model/model.pkl',
+                        default='Experiments/DPL/model/model.pkl',
                         help='the current entity type we are trained on')
     parser.add_argument('--visulization_html', type=str, default='./result/mlp_vis.html',
                         help='the html that can write')
@@ -60,7 +60,7 @@ def load_arguments():
     parser.add_argument('--confidence_html', type=str, default='./result/confidence.html',
                         help='display the confidence for each prediction')
     parser.add_argument('--gene_key', type=str,
-                        default='/home/jonathan/CollaborativeNetwork/Experiments/DPLpy3/data/gene_key.pkl',
+                        default='Experiments/DPL/data/gene_key.pkl',
                         help='display the confidence for each prediction')
     parser.add_argument('--window_size', type=int, default=5,
                         help='lstm or rnn')
@@ -91,6 +91,8 @@ def load_arguments():
     # E step or M step, split the task into different machine
     parser.add_argument('--stage', help='E step or M step', type=str, default="E")
     parser.add_argument('--prediction_file', help='prediction file', type=str, default="")
+
+    parser.add_argument('--tune_threshold', help='whether to tune threshold', type=bool, default=True)
 
     args = parser.parse_args()
     args.cuda = not args.no_cuda and torch.cuda.is_available()

@@ -13,11 +13,11 @@
 *.iml
 *.pyc
 
-/Experiments/CollectiveActivity/data/**
-/Experiments/RecommendationsMovieLens/teacher/train/**
-/Experiments/RecommendationsMovieLens/teacher/test/**
+/Experiments/Classification/CollectiveActivity/data/**
+/Experiments/Regression/RecommendationsMovieLens/teacher/train/**
+/Experiments/Regression/RecommendationsMovieLens/teacher/test/**
 /Experiments/DPL/data/**
 
-/Experiments/CollectiveActivity/result/**
+/Experiments/Classification/CollectiveActivity/result/**
 .DS_Store
 trainmarkov_blanket.psl

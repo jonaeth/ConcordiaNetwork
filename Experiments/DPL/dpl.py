@@ -10,197 +10,157 @@ from copy import deepcopy
 import numpy as np
 import sys
 from load_arguments import load_arguments
+from Concordia.Student import Student
+from Concordia.ConcordiaNetwork import ConcordiaNetwork
+from sklearn.metrics import f1_score, precision_score, recall_score, accuracy_score
 
 args = load_arguments()
 
 sys.setrecursionlimit(20000)
 
-torch.manual_seed(args.seed)
-print(" use cuda: %d \n" % args.cuda)
-if args.cuda:
-    torch.cuda.manual_seed(args.seed)
+def set_initial_seed(seed, args):
+    torch.manual_seed(seed)
+    print(" use cuda: %d \n" % args.cuda)
+    if args.cuda:
+        torch.cuda.manual_seed(seed)
 
-kwargs = {'num_workers': 1, 'pin_memory': True} if args.cuda else {}
+def get_word2vec(path_to_embeddings):
+    if not path_to_embeddings:
+        return None
+    with open(path_to_embeddings, "rb") as fp:
+        wordvec = pickle.load(fp)
+    return wordvec
 
-# we can specify the model here later
-wordvec = None
-if args.word_embedding:
-    fp = open(args.word_embedding, "rb")
-    wordvec = pickle.load(fp)
-    fp.close()
 
-# Load vocabulary wrapper
-with open(args.vocab_path, 'rb') as f:
-    vocab = pickle.load(f)
-    f.close()
+def get_vocabulary_wrapper(vocab_path):
+    with open(vocab_path, 'rb') as f:
+        vocab = pickle.load(f)
+    return vocab
+
+
+def load_pickle_data(file_path):
+    with open(file_path, "rb") as fp:
+        data = pickle.load(fp)
+    return data
+
+
+def get_data_balancing_weights(target):
+    # make the data balance
+    num_pos = float(sum(target[:, 0] <= target[:, 1]))
+    num_neg = float(sum(target[:, 0] > target[:, 1]))
+    mask_pos = (target[:, 0] <= target[:, 1]).cpu().float()
+    mask_neg = (target[:, 0] > target[:, 1]).cpu().float()
+    weight = mask_pos * (num_pos + num_neg) / num_pos
+    weight += mask_neg * (num_pos + num_neg) / num_neg
+    if args.cuda:
+        weight = weight.cuda()
+
+    return weight
+
+
+def compute_dpl_loss(predictions, targets):
+    class_weights = get_data_balancing_weights(targets)
+    loss = F.kl_div(predictions, targets, reduction='none')
+    loss = loss.sum(dim=1) * class_weights
+    loss = loss.mean()
+    return loss
+
+
+set_initial_seed(args.seed, args)
+wordvec = get_word2vec(args.word_embedding)
+vocab = get_vocabulary_wrapper(args.vocab_path)
 
 vocab_size = len(vocab)
 print("vocab size:{}".format(vocab_size))
 args.vocab = vocab
 
+
 # dataset
-args.file_path = os.path.join(args.dataroot, args.train_data)
-data_loader = CreateDataLoader(args)
-train_loader = data_loader.load_data()
-args.file_path = os.path.join(args.dataroot, args.val_data)
-data_loader = CreateDataLoader(args)
-val_loader = data_loader.load_data()
+training_file_path = os.path.join(args.dataroot, args.train_data)
+validation_file_path = os.path.join(args.dataroot, args.val_data)
+test_file_path = os.path.join(args.dataroot, args.test_data)
 
-# re-evaluate the probability under current rnn model
-fp = open(os.path.join(args.dataroot, args.train_data), "rb")
-train_data = pickle.load(fp)
-fp.close()
+train_loader = CreateDataLoader(args.classifier_type,
+                                training_file_path,
+                                args.vocab,
+                                args.windowSize,
+                                args.batch_size).load_data()
 
-fp = open(os.path.join(args.dataroot, args.val_data), "rb")
-valid_data = pickle.load(fp)
-fp.close()
+val_loader = CreateDataLoader(args.classifier_type,
+                              validation_file_path,
+                              args.vocab,
+                              args.windowSize,
+                              args.batch_size).load_data()
 
-# for visualization
-args.file_path = os.path.join(args.dataroot, args.test_data)
-with open(args.file_path, "rb") as fp:
-    test_data = pickle.load(fp)
-# fp = open(args.file_path)
-# test_data = pickle.load(fp)
-# fp.close()
+train_data = load_pickle_data(training_file_path)
+valid_data = load_pickle_data(validation_file_path)
+test_data = load_pickle_data(test_file_path)
 
 # model
-model = EncoderRNN(args.embed_size, args.hidden_size, vocab_size, args.num_layer, args.cell, wordvec, args.class_label)
+model = EncoderRNN(args.embed_size, args.hidden_size, vocab_size, args.num_layer, args.cell, wordvec, args.class_label, args.initial_model)
 
 if args.cuda:
-    model.cuda()
+    model = model.cuda()
 
-# load the pre-trained model
-if args.initial_model and os.path.exists(args.initial_model):
-    print("load pre-trained model")
-    model.load_state_dict(torch.load(args.initial_model))
-    if args.cuda:
-        model = model.cuda()
+optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
+student = Student(model, compute_dpl_loss, optimizer)
 
-if not args.fix_embed:
-    optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
-
-
-# print ("remove all previous message passing \n")
-# command = "rm ./result/mp_*.pkl"
-# os.system(command)
 
 # train procedure, we can use more complicated optimization method
-def train_Mstep_RNN(epoch):
-    model.train()
-    all_instance = []
-
-    for batch_idx, (data, batch_mask, mask, length, target) in enumerate(train_loader):
-
+def train_Mstep_RNN():
+    student.model.train()
+    for data, batch_mask, mask, length, target in train_loader:
         if args.cuda:
             data, batch_mask, mask, target = data.cuda(), batch_mask.cuda().byte(), mask.cuda(), target.cuda()
-
-        # make the data balance
-        num_pos = float(sum(target[:, 0] <= target[:, 1]))
-        num_neg = float(sum(target[:, 0] > target[:, 1]))
-        weight = torch.ones(target.size(0), 1)
-        mask_pos = (target[:, 0] <= target[:, 1]).cpu().float()
-        mask_neg = (target[:, 0] > target[:, 1]).cpu().float()
-        weight = mask_pos * (num_pos + num_neg) / num_pos
-        weight += mask_neg * (num_pos + num_neg) / num_neg
-        if args.cuda:
-            weight = weight.cuda()
-            # weight = Variable(weight).cuda() Unnecessary
-
-        # data, mask, target = Variable(data), Variable(mask), Variable(target) NOW USELESS in new pytorch
-        optimizer.zero_grad()
-        output = model.forward(data, batch_mask, mask)
-        loss = F.kl_div(output, target, reduction='none')
-        loss = loss.sum(dim=1) * weight
-        loss = loss.mean()
-        loss.backward()
-        optimizer.step()
-        print('train_Mstep_RNN')
-        # if batch_idx % args.log_interval == 0:
-        #    print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-        #        epoch, batch_idx * len(data), len(train_loader.dataset),
-        #        100. * batch_idx / len(train_loader), loss.data[0]))
+        output = student.predict((data, batch_mask, mask))[0]
+        loss = compute_dpl_loss(output, target)
+        student.fit(loss)
 
 
-def test(epoch):
-    model.eval()
+def compute_metrics(targets, predictions, threshold=0.5):
+    predictions = np.where(np.exp(predictions) > threshold, 1, 0)
+    recall = recall_score(targets, predictions)
+    precision = precision_score(targets, predictions)
+    f1 = f1_score(targets, predictions)
+    accuracy = accuracy_score(targets, predictions)
+    return recall, precision, f1, accuracy
+
+
+def print_log_metrics(loss, accuracy, precision, recall, f1):
+    print('\nVal set: Average loss: {:.4f}, Accuracy: {:.4f}%, precision: ({:.4f}), recall: ({:.4f}),'
+          ' f1: ({:.4f}) \n'.format(loss, accuracy, precision, recall, f1))
+
+def test():
+    student.model.eval()
     val_loss = 0
-    correct = 0
-    prob_pos = []
-    prob_neg = []
+    predictions = []
+    targets = []
 
     for data, batch_mask, mask, length, target in val_loader:
-
         if args.cuda:
             data, batch_mask, mask, target = data.cuda(), batch_mask.byte().cuda(), mask.cuda(), target.cuda()
 
-        # data, mask, target = Variable(data, volatile=True), Variable(mask, volatile=True), Variable(target.select(1, 1).contiguous().view(-1).long())
-        # FIXED below, volatile=True should be equivalent to requires_grad=False, which is the default
-        # Variable and Tensor have been merged
         target = target.select(1, 1).contiguous().view(-1).long()
+        output = student.predict((data, batch_mask, mask))[0]
+        val_loss += F.nll_loss(output, target).item()/len(val_loader)
+        predictions += np.exp(output.data[:, 1].cpu().numpy()).tolist()
+        targets += target.data.cpu().tolist()
 
-        output = model.forward(data, batch_mask, mask)
+    recall, precision, f1, accuracy = compute_metrics(targets, predictions, threshold=0.5)
+    print_log_metrics(val_loss, accuracy, precision, recall, f1)
 
-        val_loss += F.nll_loss(output, target).item()  # need to check here
-        pred = output.data.max(1)[1]  # get the index of the max log-probability
-
-        pos_prob = [np.exp(output.data.cpu().numpy()[idx][1]) for idx, l in enumerate(target.data.cpu().numpy()) if
-                    l == 1]
-        neg_prob = [np.exp(output.data.cpu().numpy()[idx][1]) for idx, l in enumerate(target.data.cpu().numpy()) if
-                    l == 0]
-
-        prob_pos.extend(pos_prob)
-        prob_neg.extend(neg_prob)
-
-        correct += pred.eq(target.data).cpu().sum()
-
-    # adjust the threhold according to the sampled label
-    all_prob = deepcopy(prob_pos)
-    all_prob.extend(prob_neg)
-    all_prob = np.asarray(all_prob)
-    prob_pos = np.asarray(prob_pos)
-    prob_neg = np.asarray(prob_neg)
-
-    # 0.5 is the standard threshold
-    tp = np.sum(prob_pos >= 0.5)
-    fp = np.sum(prob_pos < 0.5)
-    tn = np.sum(prob_neg < 0.5)
-    fn = np.sum(prob_neg >= 0.5)
-    precision = tp / float(tp + fp)
-    recall = tp / float(tp + fn)
-    f1 = 2.0 * precision * recall / (precision + recall)
-
-    val_loss = val_loss
-    val_loss /= len(val_loader)  # loss function already averages over batch size
-    print(
-        '\nVal set: Average loss: {:.4f}, Accuracy: {}/{} ({:.4f}%), precision: ({:.4f}), recall: ({:.4f}), f1: ({:.4f}) \n'.format(
-            val_loss, correct, len(val_loader.dataset),
-            100. * correct / len(val_loader.dataset), precision, recall, f1))
-
-    max_acc = float(correct) / len(val_loader.dataset)
-
-    for threshold in all_prob:
-
-        tp = np.sum(prob_pos >= threshold)
-        fp = np.sum(prob_pos < threshold)
-        tn = np.sum(prob_neg < threshold)
-        fn = np.sum(prob_neg >= threshold)
-        acc = (tp + tn) / float(len(all_prob))
-
-        if acc > max_acc:
-            max_acc = acc
-            args.threshold = threshold
-            precision = tp / float(tp + fp)
-            recall = tp / float(tp + fn)
-            f1 = 2.0 * precision * recall / (precision + recall)
-
-    # print('\nVal set: Average loss: {:.4f}, Adjusted Accuracy: {}/{} ({:.4f}%), precision: ({:.4f}), recall: ({:.4f}), f1: ({:.4f})\n'.format(
-    #    val_loss, len(val_loader.dataset)*max_acc, len(val_loader.dataset),
-    #    100. * max_acc, precision, recall, f1))
-
+    if args.tune_threshold:
+        max_acc = accuracy
+        for threshold in predictions:
+            recall, precision, f1, accuracy = compute_metrics(targets, predictions, threshold=threshold)
+            if accuracy > max_acc:
+                max_acc = accuracy
+                args.threshold = threshold
+        print_log_metrics(val_loss, accuracy, precision, recall, f1)
 
 # test procedure
 def GetResult_valid(data, vocab, file_name):
-    model.eval()
+    student.model.eval()
     fp = open(file_name, "wt+")
     fp.write("threshold: %f \n" % args.threshold)
 
@@ -242,7 +202,7 @@ def GetResult_valid(data, vocab, file_name):
 
                 # mask = Variable(mask, volatile=True) Unnecessary in new torch version
 
-                output = model.forward(input_data[None], batch_mask[None].bool(), mask[None])
+                output = model.forward((input_data[None], batch_mask[None].bool(), mask[None]))[0]
                 pred = output.data.max(1)[1]  # get the index of the max log-probability
                 prob = np.exp(output.data.max(1)[0].cpu().numpy()[0])
 
@@ -327,7 +287,7 @@ def GetResult(data, entity_type, vocab):
 
                 # mask = Variable(mask, volatile=True) Unnecessary
 
-                output = model.forward(input_data[None], batch_mask[None], mask[None])
+                output = model.forward((input_data[None], batch_mask[None], mask[None]))[0]
                 pred = output.data.max(1)[1]  # get the index of the max log-probability
                 prob = np.exp(output.data.max(1)[0].cpu().numpy()[0])
 
@@ -398,7 +358,7 @@ def GetResult(data, entity_type, vocab):
 
                 # mask = Variable(mask, volatile=True) Unnecessary
 
-                output = model.forward(input_data[None], batch_mask[None], mask[None])
+                output = model.forward((input_data[None], batch_mask[None], mask[None]))[0]
                 pred = output.data.max(1)[1]  # get the index of the max log-probability
                 prob = np.exp(output.data.max(1)[0].cpu().numpy()[0])
 
@@ -520,14 +480,14 @@ for epoch in range(1, args.epochs + 1):
             if args.stage == "M":
 
                 for k in range(args.multiple_M):
-                    train_Mstep_RNN(epoch)
+                    train_Mstep_RNN()
                     print(" threshold: %f \n" % args.threshold)
                     # test after each epoch
-                    test(epoch)
+                    test()
                     GetResult_valid(valid_data, vocab, args.prediction_file)
 
                 # evaluate on the batch we sampled
-                test(epoch)
+                test()
                 print(" threshold: %f \n" % args.threshold)
                 GetResult_valid(valid_data, vocab, args.prediction_file)
 
@@ -536,9 +496,9 @@ for epoch in range(1, args.epochs + 1):
 
     else:
 
-        train_Mstep_RNN(epoch)
+        train_Mstep_RNN()
         print(" threshold: %f \n" % args.threshold)
-        test(epoch)  # initial test
+        test()  # initial test
         GetResult_valid(valid_data, vocab, args.prediction_file)
         # save the model at each epoch, always use the newest one
         torch.save(model.state_dict(), args.save_path)

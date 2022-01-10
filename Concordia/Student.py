@@ -24,6 +24,6 @@ class Student:
 
     def predict(self, neural_input):
         predictions = self.model(neural_input)
-        return list(predictions)
+        return list(predictions)  # Transformed into a list as it can be a series of predictions for several tasks
 
 

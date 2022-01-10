@@ -1,11 +1,12 @@
-from GlobalAttention import GlobalAttention
+from Experiments.DPL.NeuralNetworkModels.GlobalAttention import GlobalAttention
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import os
 
 
 class EncoderRNN(nn.Module):
-    def __init__(self, embed_size, hidden_size, vocab_size, num_layers, cell, wordvec, class_label):
+    def __init__(self, embed_size, hidden_size, vocab_size, num_layers, cell, wordvec, class_label, model_path=''):
         """Set the hyper-parameters and build the layers."""
         super(EncoderRNN, self).__init__()
         self.hidden_size = hidden_size
@@ -23,6 +24,10 @@ class EncoderRNN(nn.Module):
         self.linear = nn.Linear(self.hidden_size * 2, class_label)
         self.attention = GlobalAttention(self.hidden_size * 2)
 
+        if model_path and os.path.exists(model_path):
+            print('Loaded pre-trained model')
+            self.load_state_dict(torch.load(model_path))
+
     def init_weights(self):
         """Initialize weights."""
         self.embed.weight.data.uniform_(-0.1, 0.1)
@@ -30,8 +35,9 @@ class EncoderRNN(nn.Module):
         self.embed.weight.data.copy_(torch.from_numpy(self.wordvec))
 
     # the forward method, which compute the hidden state vector
-    def forward(self, text, batch_mask, mask):
+    def forward(self, data_instance):
         """run the lstm to decode the text"""
+        text, batch_mask, mask = data_instance
         embeddings = self.embed(text)
         hiddens, _ = self.rnn(embeddings)  # b*l*f_size
         batch = embeddings.size()[0]
@@ -50,4 +56,5 @@ class EncoderRNN(nn.Module):
 
         response = self.linear(output.view(batch, -1))
 
-        return F.log_softmax(response, dim=1)
+        return F.log_softmax(response, dim=1),
+

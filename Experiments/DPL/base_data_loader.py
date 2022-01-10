@@ -2,8 +2,7 @@ class BaseDataLoader():
     def __init__(self):
         pass
 
-    def initialize(self, opt):
-        self.opt = opt
+    def initialize(self):
         pass
 
     def load_data(self):

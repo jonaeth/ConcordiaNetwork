@@ -63,17 +63,15 @@ def collate_fn(data):
 
     return targets, batch_masks.bool(), masks, lengths, labels 
 
-class RnnDataLoader(BaseDataLoader):
+class RnnDataLoader:
     
-    def initialize(self, opt):
-        BaseDataLoader.initialize(self, opt)
-        
-        dataset = TxtFolder_RNN(file_name = opt.file_path, vocab = opt.vocab)
+    def __init__(self, file_path, vocab, batch_size):
+        dataset = TxtFolder_RNN(file_name = file_path, vocab = vocab)
         data_loader = torch.utils.data.DataLoader(
             dataset,
-            batch_size=self.opt.batch_size,
+            batch_size=batch_size,
             shuffle=True,
-            num_workers=int(self.opt.nThreads),
+            num_workers=0,#=int(self.opt.nThreads),
             drop_last=True,
             collate_fn = collate_fn
         )
