@@ -330,7 +330,14 @@ def get_results(data, entity_type):
     return result
 
 
-def get_confidence_of_trial(matches, trial, context, entity_type, positive, negative):
+def get_confidence_of_trial(instance, trial, entity_type, positive, negative):
+    context = " ".join(instance['text']).encode("ascii", "ignore").split()
+    matches = {}
+
+    # matched for inc
+    for key in instance['matched'].keys():
+        matches[key] = instance['matched'][key]
+
     negative_confidences = []
     positive_confidences = []
     # sub-sample some negative from inclusion examples
@@ -349,68 +356,29 @@ def get_confidence_of_trial(matches, trial, context, entity_type, positive, nega
 
     return negative_confidences, positive_confidences
 
-def get_confidences(results, entity_type):  # TODO: Clean up all the loops
-    confidences = {}
-    confidences['positive'] = []
-    confidences['negative'] = []
-    # sample the confidence example for evaluation
-    positive = 0
-    negative = 0
+
+def get_confidences_of_each_trial(results, entity_type):  # TODO: Clean up all the loops
+    positive_confidences = []
+    negative_confidences = []
 
     for trial in results.keys():
-
-        random_seed = True
-        if np.random.randint(10) >= 5:
-            random_seed = False
-
+        random_seed = False if np.random.randint(10) >= 5 else True
+        positive = len(positive_confidences)
+        negative = len(negative_confidences)
         # now checking each instance
-        for instance in results[trial]['inc']:
-            context_inc = " ".join(instance['text']).encode("ascii", "ignore").split()
-            matches_inc = {}
+        if random_seed == True:
+            for instance in results[trial]['inc']:
+                trial_positive_confidences, trial_negative_confidences = get_confidence_of_trial(instance, trial, entity_type, positive, negative)
+                positive_confidences += trial_positive_confidences
+                negative_confidences += trial_negative_confidences
+        else:
+            for instance in results[trial]['exc']:
+                # now choose the positive and negative example
+                trial_positive_confidences, trial_negative_confidences = get_confidence_of_trial(instance, trial, entity_type, positive, negative)
+                positive_confidences += trial_positive_confidences
+                negative_confidences += trial_negative_confidences
 
-            # matched for inc
-            for key in instance['matched'].keys():
-                matches_inc[key] = instance['matched'][key]
-
-            if random_seed == True:
-                # sub-sample some negative from inclusion examples
-                for key in matches_inc.keys():
-                    if key == entity_type:
-                        for item in matches_inc[key]:
-                            if item[2] == 0 and negative <= args.max_confidence_instance:
-                                confidences['negative'].append(
-                                    (trial, context_inc, item))  # remove all the other detection
-                                negative += 1
-                                # sub-sample some examples from exclusion examples
-                            if item[2] == 1 and positive <= args.max_confidence_instance:
-                                confidences['positive'].append(
-                                    (trial, context_inc, item))  # remove all the other detection
-                                positive += 1
-
-        for instance in results[trial]['exc']:
-            context_exc = " ".join(instance['text']).encode("ascii", "ignore").split()
-            matches_exc = {}
-
-            # matched for inc
-            for key in instance['matched'].keys():
-                matches_exc[key] = instance['matched'][key]
-
-            # now choose the positive and negative example
-            if random_seed == False:
-                # sub-sample some negative from inclusion examples
-                for key in matches_exc.keys():
-                    if key == entity_type:
-                        for item in matches_exc[key]:
-                            if item[2] == 0 and negative <= args.max_confidence_instance:
-                                confidences['negative'].append(
-                                    (trial, context_exc, item))  # remove all the other detection
-                                negative += 1
-                                # sub-sample some examples from exclusion examples
-                            if item[2] == 1 and positive <= args.max_confidence_instance:
-                                confidences['positive'].append(
-                                    (trial, context_exc, item))  # remove all the other detection
-                                positive += 1
-    return confidences
+    return {'positive': positive_confidences, 'negative': negative_confidences}
 
 
 # test procedure
@@ -419,7 +387,7 @@ def GetResult(data, entity_type, vocab):
     results = get_results(data, entity_type)
     # prepration writing prediction to html file
     examples = get_examples(results)
-    confidences = get_confidences(results, entity_type)
+    confidences = get_confidences_of_each_trial(results, entity_type)
 
     return examples, confidences
 
