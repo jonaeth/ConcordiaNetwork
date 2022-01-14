@@ -1,3 +1,7 @@
+import torch
+import pickle
+
+
 def set_initial_seed(seed, args):
     torch.manual_seed(seed)
     print(" use cuda: %d \n" % args.cuda)
@@ -24,7 +28,7 @@ def load_pickle_data(file_path):
     return data
 
 
-def get_data_balancing_weights(target):
+def get_data_balancing_weights(target, args):
     # make the data balance
     num_pos = float(sum(target[:, 0] <= target[:, 1]))
     num_neg = float(sum(target[:, 0] > target[:, 1]))

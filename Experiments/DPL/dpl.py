@@ -11,10 +11,11 @@ from Concordia.Student import Student
 from data_preparation import *
 from metrics import *
 from validation_utils import *
+from visualizer import make_html_file, make_html_file_confidence
 
 
-def compute_dpl_loss(predictions, targets):
-    class_weights = get_data_balancing_weights(targets)
+def compute_dpl_loss(predictions, targets, args):
+    class_weights = get_data_balancing_weights(targets, args)
     loss = F.kl_div(predictions, targets, reduction='none')
     loss = loss.sum(dim=1) * class_weights
     loss = loss.mean()
@@ -28,7 +29,7 @@ def train_m_step_rnn(student, train_loader, args):
         if args.cuda:
             data, batch_mask, mask, target = data.cuda(), batch_mask.cuda().byte(), mask.cuda(), target.cuda()
         output = student.predict((data, batch_mask, mask))[0]
-        loss = compute_dpl_loss(output, target)
+        loss = compute_dpl_loss(output, target, args)
         student.fit(loss)
 
 
@@ -178,11 +179,11 @@ def main(opt):
             torch.save(model.state_dict(), opt.save_path)
 
     # ignore this first
-    test_result, confidence = get_examples_and_confidences(student, test_data, vocab, opt.entity_type, opt)
+    test_result, confidences = get_examples_and_confidences(student, test_data, vocab, opt.entity_type, opt)
 
     # visualization the result using the visualizer
     print("writing the result to html \n")
-    # make_html_file(test_result, args.visulization_html, args.entity_type)  TODO
+    make_html_file(test_result, opt.visulization_html, opt.entity_type)
 
     # Load gene key data
     with open(opt.gene_key, 'rb') as f:
@@ -190,7 +191,7 @@ def main(opt):
         f.close()
 
     print("writing the confidence to html \n")
-    # make_html_file_confidence(confidence, args.confidence_html, gene_key)  TODO
+    make_html_file_confidence(confidences, opt.confidence_html, gene_key)
 
     # write the the confidence to file for calculating the precision and recall
     # make_csv_file(args.csv_file, confidence)
