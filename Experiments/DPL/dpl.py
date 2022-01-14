@@ -6,56 +6,18 @@ from NeuralNetworkModels.EncoderRNN import EncoderRNN
 from data_loader import CreateDataLoader
 import os
 import pickle
-from copy import deepcopy
 import numpy as np
 import sys
 from load_arguments import load_arguments
 from Concordia.Student import Student
 from Concordia.ConcordiaNetwork import ConcordiaNetwork
-from sklearn.metrics import f1_score, precision_score, recall_score, accuracy_score
+from data_preparation import *
+from metrics import *
+from validation_utils import *
 
 args = load_arguments()
 
 sys.setrecursionlimit(20000)
-
-def set_initial_seed(seed, args):
-    torch.manual_seed(seed)
-    print(" use cuda: %d \n" % args.cuda)
-    if args.cuda:
-        torch.cuda.manual_seed(seed)
-
-def get_word2vec(path_to_embeddings):
-    if not path_to_embeddings:
-        return None
-    with open(path_to_embeddings, "rb") as fp:
-        wordvec = pickle.load(fp)
-    return wordvec
-
-
-def get_vocabulary_wrapper(vocab_path):
-    with open(vocab_path, 'rb') as f:
-        vocab = pickle.load(f)
-    return vocab
-
-
-def load_pickle_data(file_path):
-    with open(file_path, "rb") as fp:
-        data = pickle.load(fp)
-    return data
-
-
-def get_data_balancing_weights(target):
-    # make the data balance
-    num_pos = float(sum(target[:, 0] <= target[:, 1]))
-    num_neg = float(sum(target[:, 0] > target[:, 1]))
-    mask_pos = (target[:, 0] <= target[:, 1]).cpu().float()
-    mask_neg = (target[:, 0] > target[:, 1]).cpu().float()
-    weight = mask_pos * (num_pos + num_neg) / num_pos
-    weight += mask_neg * (num_pos + num_neg) / num_neg
-    if args.cuda:
-        weight = weight.cuda()
-
-    return weight
 
 
 def compute_dpl_loss(predictions, targets):
@@ -124,19 +86,6 @@ def train_Mstep_RNN():
         student.fit(loss)
 
 
-def compute_metrics(targets, predictions, threshold=0.5):
-    predictions = np.where(np.exp(predictions) > threshold, 1, 0)
-    recall = recall_score(targets, predictions)
-    precision = precision_score(targets, predictions)
-    f1 = f1_score(targets, predictions)
-    accuracy = accuracy_score(targets, predictions)
-    return recall, precision, f1, accuracy
-
-
-def print_log_metrics(loss, accuracy, precision, recall, f1):
-    print('\nVal set: Average loss: {:.4f}, Accuracy: {:.4f}%, precision: ({:.4f}), recall: ({:.4f}),'
-          ' f1: ({:.4f}) \n'.format(loss, accuracy, precision, recall, f1))
-
 def test():
     student.model.eval()
     val_loss = 0
@@ -166,56 +115,6 @@ def test():
         print_log_metrics(val_loss, accuracy, precision, recall, f1)
 
 
-def create_masks(len_text, start, end):
-    start_pos = max([start - 10, 0])
-    end_pos = min([end + 10, len_text])
-
-    mask = torch.LongTensor([1 if start <= i <= end else 0 for i in range(len_text)])
-    batch_mask = torch.LongTensor([0 if start_pos <= i < end_pos else 1 for i in range(len_text)])
-    if args.cuda:
-        mask = mask.cuda()
-        batch_mask = batch_mask.byte().cuda()
-
-    return mask, batch_mask
-
-
-def predict_label(input_data, batch_mask, mask):
-    output = student.model.forward((input_data[None], batch_mask[None].bool(), mask[None]))[0]
-    pred = output.data.max(1)[1]  # get the index of the max log-probability
-    prob = np.exp(output.data.max(1)[0].cpu().numpy()[0])
-    label = pred.cpu().numpy()[0]
-
-    if label == 0 and 1 - prob >= args.threshold:
-        label = 1
-
-    if label == 1 and prob < args.threshold:
-        label = 0
-
-    log_probabilities = output.data.cpu().numpy()
-    protein_log_probability = log_probabilities[0][1]  # Prob(X=1)
-    return label, protein_log_probability, log_probabilities
-
-
-def map_text_to_vocab_indices(instance,vocab):
-    text = instance['text']
-    tokens = []
-    tokens.extend([vocab(token) for token in text])
-    tokens = torch.LongTensor(tokens)
-
-    if args.cuda:
-        tokens = tokens.cuda()
-    return tokens
-
-
-def write_prediction_to_file(file, trial, text, true_label, predicted_label, predicted_probability):
-    # write the prediction to file
-    file.write(trial + "\t")
-    file.write(" ".join(text) + "\t")
-    file.write("true label:" + str(true_label) + "\t")
-    file.write("prediction:" + str(predicted_label) + "\t")
-    file.write("p(x=1):" + str(predicted_probability) + "\n")
-
-
 # test procedure
 def GetResult_valid(data, vocab, file_name):
     student.model.eval()
@@ -225,12 +124,12 @@ def GetResult_valid(data, vocab, file_name):
     for trial in data.keys():
         for i in range(len(data[trial]['inc'])):
             instance = data[trial]['inc'][i]
-            input_data = map_text_to_vocab_indices(instance, vocab)
+            input_data = map_text_to_vocab_indices(instance, vocab, args)
 
             for item in instance['pos_neg_example']:
 
-                mask, batch_mask = create_masks(len(instance['text']), item[0], item[1])
-                label, protein_probability, _ = predict_label(input_data, batch_mask, mask)
+                mask, batch_mask = create_masks(args, len(instance['text']), item[0], item[1])
+                label, protein_probability, _ = predict_label(student, args, input_data, batch_mask, mask)
                 write_prediction_to_file(file=fp,
                                          trial=trial,
                                          text=instance['text'],
@@ -241,153 +140,13 @@ def GetResult_valid(data, vocab, file_name):
     fp.close()
 
 
-def get_context_and_matches(instance):
-    context = " ".join(instance['text']).encode("ascii", "ignore").split()
-    matches = {}
-    # matched for inc
-    for key in instance['matched'].keys():
-        matches[key] = instance['matched'][key]
-
-    return context, matches
-
-
-def get_examples(result):
-    examples = {}
-    for trial in result.keys():
-        examples[trial] = {}
-        examples[trial]['inc'] = []
-        examples[trial]['exc'] = []
-
-        for instance in result[trial]['inc']:
-            context_inc, matches_inc = get_context_and_matches(instance)
-            examples[trial]['inc'].append((context_inc, matches_inc))
-
-        for instance in result[trial]['exc']:
-            context_exc, matches_exc = get_context_and_matches(instance)
-            examples[trial]['exc'].append((context_exc, matches_exc))
-
-    return examples
-
-
-def sample_matches(matches, trial, context, entity_type, positive, negative, confidence):
-    for key in matches.keys():
-        if key == entity_type:
-            for item in matches[key]:
-                if item[2] == 0 and negative <= args.max_confidence_instance:
-                    confidence['negative'].append(
-                        (trial, context, item))  # remove all the other detection
-                    negative += 1
-                    # sub-sample some examples from exclusion examples
-                if item[2] == 1 and positive <= args.max_confidence_instance:
-                    confidence['positive'].append(
-                        (trial, context, item))  # remove all the other detection
-                    positive += 1
-
-
-def get_result_of_trial(instance, entity_type):
-    input_data = map_text_to_vocab_indices(instance, vocab)
-    # will resave the result
-    new_instance = deepcopy(instance)
-    new_instance['matched'][entity_type] = []
-
-    # only care the specified entity type
-    checked_item = []
-    for item in instance['matched'][entity_type]:
-
-        if item in checked_item:
-            continue
-
-        # add some filters here
-        if len(" ".join(instance['text'][item[0]:item[1] + 1])) <= 3:
-            continue
-
-        checked_item.append(item)
-
-        mask, batch_mask = create_masks(len(instance['text']), item[0], item[1])
-
-        label, _, log_probabilites = predict_label(input_data, batch_mask, mask)
-
-        # save the result to the data type
-        new_instance['matched'][entity_type].append(
-            (item[0], item[1], label, np.exp(log_probabilites)))
-
-    return new_instance
-
-
-def get_results(data, entity_type):
-    result = deepcopy(data)
-
-    for trial in data.keys():
-
-        for i in range(len(data[trial]['inc'])):
-            instance = data[trial]['inc'][i]
-            result[trial]['inc'][i] = get_result_of_trial(instance, entity_type)
-
-        for i in range(len(data[trial]['exc'])):
-            instance = data[trial]['exc'][i]
-            result[trial]['exc'][i] = get_result_of_trial(instance, entity_type)
-
-    return result
-
-
-def get_confidence_of_trial(instance, trial, entity_type, positive, negative):
-    context = " ".join(instance['text']).encode("ascii", "ignore").split()
-    matches = {}
-
-    # matched for inc
-    for key in instance['matched'].keys():
-        matches[key] = instance['matched'][key]
-
-    negative_confidences = []
-    positive_confidences = []
-    # sub-sample some negative from inclusion examples
-    for key in matches.keys():
-        if key == entity_type:
-            for item in matches[key]:
-                if item[2] == 0 and negative <= args.max_confidence_instance:
-                    negative_confidences.append(
-                        (trial, context, item))  # remove all the other detection
-                    negative += 1
-                    # sub-sample some examples from exclusion examples
-                if item[2] == 1 and positive <= args.max_confidence_instance:
-                    positive_confidences.append(
-                        (trial, context, item))  # remove all the other detection
-                    positive += 1
-
-    return negative_confidences, positive_confidences
-
-
-def get_confidences_of_each_trial(results, entity_type):  # TODO: Clean up all the loops
-    positive_confidences = []
-    negative_confidences = []
-
-    for trial in results.keys():
-        random_seed = False if np.random.randint(10) >= 5 else True
-        positive = len(positive_confidences)
-        negative = len(negative_confidences)
-        # now checking each instance
-        if random_seed == True:
-            for instance in results[trial]['inc']:
-                trial_positive_confidences, trial_negative_confidences = get_confidence_of_trial(instance, trial, entity_type, positive, negative)
-                positive_confidences += trial_positive_confidences
-                negative_confidences += trial_negative_confidences
-        else:
-            for instance in results[trial]['exc']:
-                # now choose the positive and negative example
-                trial_positive_confidences, trial_negative_confidences = get_confidence_of_trial(instance, trial, entity_type, positive, negative)
-                positive_confidences += trial_positive_confidences
-                negative_confidences += trial_negative_confidences
-
-    return {'positive': positive_confidences, 'negative': negative_confidences}
-
-
 # test procedure
-def GetResult(data, entity_type, vocab):
+def GetResult(data, entity_type):
     student.model.eval()
-    results = get_results(data, entity_type)
+    results = get_results(data, student, entity_type, vocab, args)
     # prepration writing prediction to html file
     examples = get_examples(results)
-    confidences = get_confidences_of_each_trial(results, entity_type)
+    confidences = get_confidences_of_each_trial(results, entity_type, args)
 
     return examples, confidences
 
@@ -427,7 +186,7 @@ for epoch in range(1, args.epochs + 1):
         torch.save(model.state_dict(), args.save_path)
 
 # ignore this first
-test_result, confidence = GetResult(test_data, args.entity_type, vocab)
+test_result, confidence = GetResult(test_data, args.entity_type)
 
 # visualization the result using the visualizer
 print("writing the result to html \n")
