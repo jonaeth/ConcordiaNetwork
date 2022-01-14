@@ -1,23 +1,16 @@
 from __future__ import print_function
-import torch
 import torch.nn.functional as F
 import torch.optim as optim
 from NeuralNetworkModels.EncoderRNN import EncoderRNN
 from data_loader import CreateDataLoader
 import os
 import pickle
-import numpy as np
 import sys
 from load_arguments import load_arguments
 from Concordia.Student import Student
-from Concordia.ConcordiaNetwork import ConcordiaNetwork
 from data_preparation import *
 from metrics import *
 from validation_utils import *
-
-args = load_arguments()
-
-sys.setrecursionlimit(20000)
 
 
 def compute_dpl_loss(predictions, targets):
@@ -28,55 +21,8 @@ def compute_dpl_loss(predictions, targets):
     return loss
 
 
-set_initial_seed(args.seed, args)
-wordvec = get_word2vec(args.word_embedding)
-vocab = get_vocabulary_wrapper(args.vocab_path)
-
-vocab_size = len(vocab)
-print("vocab size:{}".format(vocab_size))
-args.vocab = vocab
-
-
-# dataset
-training_file_path = os.path.join(args.dataroot, args.train_data)
-validation_file_path = os.path.join(args.dataroot, args.val_data)
-test_file_path = os.path.join(args.dataroot, args.test_data)
-
-train_loader = CreateDataLoader(args.classifier_type,
-                                training_file_path,
-                                args.vocab,
-                                args.windowSize,
-                                args.batch_size).load_data()
-
-val_loader = CreateDataLoader(args.classifier_type,
-                              validation_file_path,
-                              args.vocab,
-                              args.windowSize,
-                              args.batch_size).load_data()
-
-train_data = load_pickle_data(training_file_path)
-valid_data = load_pickle_data(validation_file_path)
-test_data = load_pickle_data(test_file_path)
-
-# model
-model = EncoderRNN(args.embed_size,
-                   args.hidden_size,
-                   vocab_size,
-                   args.num_layer,
-                   args.cell,
-                   wordvec,
-                   args.class_label,
-                   args.initial_model)
-
-if args.cuda:
-    model = model.cuda()
-
-optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
-student = Student(model, compute_dpl_loss, optimizer)
-
-
 # train procedure, we can use more complicated optimization method
-def train_Mstep_RNN():
+def train_m_step_rnn(student, train_loader, args):
     student.model.train()
     for data, batch_mask, mask, length, target in train_loader:
         if args.cuda:
@@ -86,7 +32,7 @@ def train_Mstep_RNN():
         student.fit(loss)
 
 
-def test():
+def test(student, val_loader, args):
     student.model.eval()
     val_loss = 0
     predictions = []
@@ -98,7 +44,7 @@ def test():
 
         target = target.select(1, 1).contiguous().view(-1).long()
         output = student.predict((data, batch_mask, mask))[0]
-        val_loss += F.nll_loss(output, target).item()/len(val_loader)
+        val_loss += F.nll_loss(output, target).item() / len(val_loader)
         predictions += np.exp(output.data[:, 1].cpu().numpy()).tolist()
         targets += target.data.cpu().tolist()
 
@@ -116,7 +62,7 @@ def test():
 
 
 # test procedure
-def GetResult_valid(data, vocab, file_name):
+def write_validation_result_to_file(student, data, vocab, file_name, args):
     student.model.eval()
     fp = open(file_name, "wt+")
     fp.write("threshold: %f \n" % args.threshold)
@@ -127,7 +73,6 @@ def GetResult_valid(data, vocab, file_name):
             input_data = map_text_to_vocab_indices(instance, vocab, args)
 
             for item in instance['pos_neg_example']:
-
                 mask, batch_mask = create_masks(args, len(instance['text']), item[0], item[1])
                 label, protein_probability, _ = predict_label(student, args, input_data, batch_mask, mask)
                 write_prediction_to_file(file=fp,
@@ -141,7 +86,7 @@ def GetResult_valid(data, vocab, file_name):
 
 
 # test procedure
-def GetResult(data, entity_type):
+def get_examples_and_confidences(student, data, vocab, entity_type, args):
     student.model.eval()
     results = get_results(data, student, entity_type, vocab, args)
     # prepration writing prediction to html file
@@ -151,57 +96,110 @@ def GetResult(data, entity_type):
     return examples, confidences
 
 
-for epoch in range(1, args.epochs + 1):
+def main(opt):
+    # init
+    set_initial_seed(opt.seed, opt)
+    wordvec = get_word2vec(opt.word_embedding)
+    vocab = get_vocabulary_wrapper(opt.vocab_path)
 
-    # train the nn model
-    if not args.hard_em:
+    vocab_size = len(vocab)
+    print("vocab size:{}".format(vocab_size))
+    opt.vocab = vocab
 
-        if not args.stochastic:
+    # dataset
+    training_file_path = os.path.join(opt.dataroot, opt.train_data)
+    validation_file_path = os.path.join(opt.dataroot, opt.val_data)
+    test_file_path = os.path.join(opt.dataroot, opt.test_data)
 
-            # initial update the nn with all the examples
-            if args.stage == "M":
+    train_loader = CreateDataLoader(opt.classifier_type,
+                                    training_file_path,
+                                    opt.vocab,
+                                    opt.windowSize,
+                                    opt.batch_size).load_data()
 
-                for k in range(args.multiple_M):
-                    train_Mstep_RNN()
-                    print(" threshold: %f \n" % args.threshold)
-                    # test after each epoch
-                    test()
-                    GetResult_valid(valid_data, vocab, args.prediction_file)
+    val_loader = CreateDataLoader(opt.classifier_type,
+                                  validation_file_path,
+                                  opt.vocab,
+                                  opt.windowSize,
+                                  opt.batch_size).load_data()
 
-                # evaluate on the batch we sampled
-                test()
-                print(" threshold: %f \n" % args.threshold)
-                GetResult_valid(valid_data, vocab, args.prediction_file)
+    train_data = load_pickle_data(training_file_path)
+    valid_data = load_pickle_data(validation_file_path)
+    test_data = load_pickle_data(test_file_path)
 
-                # save the model at each epoch, always use the newest one
-                torch.save(model.state_dict(), args.save_path)
+    # model
+    model = EncoderRNN(opt.embed_size,
+                       opt.hidden_size,
+                       vocab_size,
+                       opt.num_layer,
+                       opt.cell,
+                       wordvec,
+                       opt.class_label,
+                       opt.initial_model)
 
-    else:
+    if opt.cuda:
+        model = model.cuda()
 
-        train_Mstep_RNN()
-        print(" threshold: %f \n" % args.threshold)
-        test()  # initial test
-        GetResult_valid(valid_data, vocab, args.prediction_file)
-        # save the model at each epoch, always use the newest one
-        torch.save(model.state_dict(), args.save_path)
+    optimizer = optim.SGD(model.parameters(), lr=opt.lr, momentum=opt.momentum)
+    student = Student(model, compute_dpl_loss, optimizer)
 
-# ignore this first
-test_result, confidence = GetResult(test_data, args.entity_type)
+    for epoch in range(1, opt.epochs + 1):
 
-# visualization the result using the visualizer
-print("writing the result to html \n")
-# make_html_file(test_result, args.visulization_html, args.entity_type)  TODO
+        # train the nn model
+        if not opt.hard_em:
 
-# Load gene key data
-with open(args.gene_key, 'rb') as f:
-    gene_key = pickle.load(f)
-    f.close()
+            if not opt.stochastic:
 
-print("writing the confidence to html \n")
-# make_html_file_confidence(confidence, args.confidence_html, gene_key)  TODO
+                # initial update the nn with all the examples
+                if opt.stage == "M":
 
-# write the the confidence to file for calculating the precision and recall
-# make_csv_file(args.csv_file, confidence)
+                    for k in range(opt.multiple_M):
+                        train_m_step_rnn(student, train_loader, opt)
+                        print(" threshold: %f \n" % opt.threshold)
+                        # test after each epoch
+                        test(student, val_loader, opt)
+                        write_validation_result_to_file(student, valid_data, vocab, opt.prediction_file, opt)
 
-# save the final model
-torch.save(model.state_dict(), args.save_path)
+                    # evaluate on the batch we sampled
+                    test(student, val_loader, opt)
+                    print(" threshold: %f \n" % opt.threshold)
+                    write_validation_result_to_file(student, valid_data, vocab, opt.prediction_file, opt)
+
+                    # save the model at each epoch, always use the newest one
+                    torch.save(model.state_dict(), opt.save_path)
+
+        else:
+
+            train_m_step_rnn(student, train_loader, opt)
+            print(" threshold: %f \n" % opt.threshold)
+            test(student, val_loader, opt)  # initial test
+            write_validation_result_to_file(student, valid_data, vocab, opt.prediction_file, opt)
+            # save the model at each epoch, always use the newest one
+            torch.save(model.state_dict(), opt.save_path)
+
+    # ignore this first
+    test_result, confidence = get_examples_and_confidences(student, test_data, vocab, opt.entity_type, opt)
+
+    # visualization the result using the visualizer
+    print("writing the result to html \n")
+    # make_html_file(test_result, args.visulization_html, args.entity_type)  TODO
+
+    # Load gene key data
+    with open(opt.gene_key, 'rb') as f:
+        gene_key = pickle.load(f)
+        f.close()
+
+    print("writing the confidence to html \n")
+    # make_html_file_confidence(confidence, args.confidence_html, gene_key)  TODO
+
+    # write the the confidence to file for calculating the precision and recall
+    # make_csv_file(args.csv_file, confidence)
+
+    # save the final model
+    torch.save(model.state_dict(), opt.save_path)
+
+
+if __name__ == '__main__':
+    options = load_arguments()
+    sys.setrecursionlimit(20000)
+    main(options)
