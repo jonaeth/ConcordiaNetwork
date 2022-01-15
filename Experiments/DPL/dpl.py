@@ -16,6 +16,9 @@ from utils import update_graph_parameters
 import random
 import string
 import time
+import re
+from collections import defaultdict
+from tqdm import tqdm
 
 
 def compute_dpl_loss(predictions, targets, args):
@@ -43,6 +46,45 @@ def train_m_step_rnn(epoch, student, train_loader, args):
                                                                            loss.item()))
 
 
+def compute_predicates(data_instances):
+    predicates = defaultdict(list)
+    targets = []
+    for trial_id, trial in enumerate(data_instances.keys()):
+        for i in range(len(data_instances[trial]['inc'])):
+            instance = data_instances[trial]['inc'][i]
+            if not len(instance['pos_neg_example']):
+                continue
+
+            targets += [f"{trial_id}\t0\t{example_id}" for example_id in range(len(instance['pos_neg_example']))]
+            for rv_name, rv_value in instance['graph'].base_assignment.items():
+                example_id = re.findall('[0-9]+', rv_name)[0]
+                predicate_name = rv_name[:rv_name.index(example_id)]
+                predicates[predicate_name].append(f"{trial_id}\t0\t{example_id}\t{rv_value}")
+
+    for trial_id, trial in enumerate(data_instances.keys()):
+        for i in range(len(data_instances[trial]['exc'])):
+            instance = data_instances[trial]['exc'][i]
+            if not len(instance['pos_neg_example']):
+                continue
+
+            targets += [f"{trial_id}\t1\t{example_id}" for example_id in range(len(instance['pos_neg_example']))]
+            for rv_name, rv_value in instance['graph'].base_assignment.items():
+                example_id = re.findall('[0-9]+', rv_name)[0]
+                predicate_name = rv_name[:rv_name.index(example_id)]
+                predicates[predicate_name].append(f"{trial_id}\t1\t{example_id}\t{rv_value}")
+
+    with open(f'Experiments/DPL/teacher/train/targets/z.psl', 'w') as f:
+        for row in targets:
+            f.write(f'{row}\n')
+
+    for predicate_name, groundings in predicates.items():
+        with open(f'Experiments/DPL/teacher/train/observations/{predicate_name}.psl', 'w') as f:
+            for row in groundings:
+                f.write(f'{row}\n')
+    return predicates
+
+
+
 def train_m_step_potential(result, args):
     # calculate the gradient over all the samples
     current_parameters = {}  # only need to get it one time
@@ -56,6 +98,7 @@ def train_m_step_potential(result, args):
                 current_parameters.update(
                     instance['graph'].get_current_parameters())  # reset the prior, this is necessary
                 grads.append(instance['graph'].compute_gradient())  # get the gradient from this sample
+
 
         for i in range(len(result[trial]['exc'])):
 
@@ -112,7 +155,7 @@ def train_e_step(student, data, vocab, args):
     # examples = {}
     # factor_cnt = 0
 
-    for trial in data.keys():
+    for trial in tqdm(data.keys()):
 
         for i in range(len(data[trial]['inc'])):
             instance = data[trial]['inc'][i]
@@ -402,6 +445,8 @@ def main(opt):
                         if result is None:
                             result = train_data
                         result = train_e_step(student, result, vocab, opt)
+                        compute_predicates(train_data)
+
                         # train the graphical model with those labels
                         result = train_m_step_potential(result, opt)
                         # reset the prior, message-passing again
