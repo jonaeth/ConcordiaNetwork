@@ -23,5 +23,5 @@ concordia_config = {
     'train_online': False,
     'regression': True,
     'teacher_student_distributions_comparison': [True],
-    'log_path': f'Experiments/RecommendationsMovieLens/logs/log_{time_str}.txt'
+    'log_path': f'Experiments/Regression/RecommendationsMovieLens/logs/log_{time_str}.txt'
 }

@@ -10,7 +10,7 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 from config_concordia import config_concordia
 from Experiments.Regression.neural_network_models.ncf import NCF
-from config import neural_network_config, optimiser_config, concordia_config
+from config import neural_network_config, optimiser_config, concordia_config, time_str
 data_split = 'train'
 
 
@@ -43,8 +43,8 @@ class MovieLensDataset(data.Dataset):
 
 def run(data_fraction):
     # Load Data
-    data_fraction = 2
-    path_to_data = "Experiments/RecommendationsMovieLens/data"
+    data_fraction = 100
+    path_to_data = "Experiments/Regression/RecommendationsMovieLens/data"
 
     df_items, df_users, df_ratings_learn = extract_movielens_data('train', path_to_data)
     _, _, df_ratings_validation = extract_movielens_data('valid', path_to_data)
@@ -79,6 +79,11 @@ def run(data_fraction):
     print(f'Running PSL Distribution inference')
 
     psl_predictions = teacher_psl.predict()
+
+    with open(f'Experiments/Regression/RecommendationsMovieLens/logs/psl_distribution_predictions_{time_str}.txt', 'w') as fp:
+        for pred_arg, dist in zip(psl_predictions[0][0], psl_predictions[0][1]):
+            fp.write(f"{pred_arg}_[{','.join(dist.astype(str))}]\n")
+
 
     neural_network_config['num_users'] = num_users
     neural_network_config['num_items'] = num_items
