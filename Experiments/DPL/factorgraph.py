@@ -42,6 +42,7 @@ import signal
 import numpy as np
 
 
+
 # Constants
 # -----------------------------------------------------------------------------
 
@@ -206,8 +207,8 @@ class Graph(object):
         # Look up RVs if needed.
         for i in range(len(rvs)):
             if debug:
-                assert type(rvs[i]) in [str, unicode, RV]
-            if type(rvs[i]) in [str, unicode]:
+                assert type(rvs[i]) in [bytes, str, RV]
+            if type(rvs[i]) in [bytes, str]:
                 rvs[i] = self._rvs[rvs[i]]
             # This is just a coding sanity check.
             assert type(rvs[i]) is RV
@@ -261,12 +262,12 @@ class Graph(object):
             assert len(x) == len(self._rvs)
 
             # check that each assignment is valid (->)
-            for name, label in x.iteritems():
+            for name, label in x.items():
                 assert name in self._rvs
                 assert self._rvs[name].has_label(label)
 
             # check that each RV has a valid assignment (<-)
-            for name, rv in self._rvs.iteritems():
+            for name, rv in self._rvs.items():
                 assert name in x
                 assert rv.has_label(x[name])
 
@@ -507,7 +508,7 @@ class RV(object):
         if debug:
             # labels must be [str] if provided
             for l in labels:
-                assert type(l) in [str, unicode]
+                assert type(l) in [bytes, str]
 
             # must have n_opts labels if provided
             assert len(labels) == 0 or len(labels) == n_opts
@@ -649,8 +650,8 @@ class RV(object):
         else:
             # Tracking strs only. Provided label can be int or str.
             if self.debug:
-                assert type(label) in [int, str, unicode]
-            if type(label) in [str, unicode]:
+                assert type(label) in [int, bytes, str]
+            if type(label) in [bytes, str]:
                 return label in self.labels
             # Default: int
             return label < self.n_opts
