@@ -117,7 +117,7 @@ class PSLTeacher(Teacher):
     def predict(self, teacher_input=None, target=None):
         if self.config['train_teacher']:
             self.fit(teacher_input, target)
-        elif teacher_input and target:
+        elif teacher_input:
             self._set_ground_predicates(teacher_input, target)
 
         predictions = []
@@ -144,10 +144,14 @@ class PSLTeacher(Teacher):
                 if not predicate:
                     predictions.append(torch.Tensor([]))
                 else:
+                    psl_predictions = results[self.model.get_predicate(predicate)]['truth'].values
+                    # TODO: Correct this in other experiments - this logic should be outside of here.
+                    '''
                     psl_predictions = results[self.model.get_predicate(predicate)]\
                                                         .sort_values(by=[0, 1])\
                                                         .pivot(index=0, columns=1, values='truth')\
                                                         .values
+                    '''
                     predictions.append(torch.Tensor(psl_predictions))
         return predictions
 

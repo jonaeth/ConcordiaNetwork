@@ -49,7 +49,7 @@ def train_m_step_rnn(epoch, student, train_loader, args):
 def compute_predicates(data_instances):
     predicates = defaultdict(list)
     targets = []
-    for trial_id, trial in enumerate(data_instances.keys()):
+    for trial_id, trial in tqdm(enumerate(data_instances.keys())):
         for i in range(len(data_instances[trial]['inc'])):
             instance = data_instances[trial]['inc'][i]
             if not len(instance['pos_neg_example']):

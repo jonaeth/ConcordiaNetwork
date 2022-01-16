@@ -4,7 +4,7 @@ from torch.optim import Adam
 class Student:
     def __init__(self, neural_model, student_loss_function, optimizer=None):
         self.model = neural_model
-        self.loss_fn = student_loss_function
+        self.loss_fn = self._set_student_loss(student_loss_function)
         if optimizer:
             self.optimizer = optimizer
         else:
@@ -12,6 +12,12 @@ class Student:
 
     def __str__(self):
         print(self.model)
+
+    def _set_student_loss(self, student_loss_function):
+        if student_loss_function is None:
+            return lambda x, y: 0
+        else:
+            return student_loss_function
 
     # TODO implement function
     def write_model_to_file(self, file_name):

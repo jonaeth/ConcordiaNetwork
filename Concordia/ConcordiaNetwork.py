@@ -4,6 +4,7 @@ from Concordia.utils.torch_losses import kl_divergence
 from Concordia.MixtureOfExperts import MixtureOfExperts
 from Concordia.Logger import Logger
 
+
 class ConcordiaNetwork:
     def __init__(self, student, teacher=None, **config):
         self.student = student
@@ -88,7 +89,9 @@ class ConcordiaNetwork:
         return [variable.detach().cpu() for variable in variables]
 
     def _to_device(self, variables):
-        if type(variables) != list:
+        if variables is None:
+            return torch.tensor(0).to(device=self.device)
+        if type(variables) != list and type(variables) != tuple:
             return variables.to(device=self.device)
         return [variable.to(device=self.device) for variable in variables]
 

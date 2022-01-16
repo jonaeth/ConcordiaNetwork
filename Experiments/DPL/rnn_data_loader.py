@@ -61,7 +61,7 @@ def collate_fn(data):
     for i, l in enumerate(label):
         labels[i, :] = l
 
-    return targets, batch_masks.bool(), masks, lengths, labels 
+    return targets, batch_masks.bool(), masks, torch.tensor(lengths), labels
 
 class RnnDataLoader:
     
