@@ -12,11 +12,14 @@
 *.xml
 *.iml
 *.pyc
+**/logs/**
 
 /Experiments/Classification/CollectiveActivity/data/**
 /Experiments/Regression/RecommendationsMovieLens/teacher/train/**
 /Experiments/Regression/RecommendationsMovieLens/teacher/test/**
 /Experiments/DPL/data/**
+/Experiments/DPL/data_old/**
+/Experiments/DPL/teacher/train**
 
 /Experiments/Classification/CollectiveActivity/result/**
 .DS_Store

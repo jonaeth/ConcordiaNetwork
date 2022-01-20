@@ -20,3 +20,10 @@ str_length(Trial, Type, Instance, Example) >> z(Trial, Type, Instance, Example)	
 z(Trial, Type, Instance, Example) >> str_length(Trial, Type, Instance, Example)	1
 token_length(Trial, Type, Instance, Example) >> z(Trial, Type, Instance, Example)	1
 z(Trial, Type, Instance, Example) >> token_length(Trial, Type, Instance, Example)	1
+same_mention(Trial, Type, Instance, Example1, Example2) & z(Trial, Type, Instance, Example1) >> z(Trial, Type, Instance, Example2)	1
+cross_sentence_pairwise(Trial, Type, Instance, Example1, Example2) & z(Trial, Type, Instance, Example1) >> z(Trial, Type, Instance, Example2)	1
+logical_connective(Trial, Type, Instance, Example1, Example2) & z(Trial, Type, Instance, Example1) >> z(Trial, Type, Instance, Example2)	1
+acronym_pairwise(Trial, Type, Instance, Example1, Example2) & z(Trial, Type, Instance, Example1) >> z(Trial, Type, Instance, Example2)	1
+same_mention(Trial, Type, Instance, Example1, Example2) & z(Trial, Type, Instance, Example2) >> z(Trial, Type, Instance, Example1)	1
+logical_connective(Trial, Type, Instance, Example1, Example2) & z(Trial, Type, Instance, Example2) >> z(Trial, Type, Instance, Example1)	1
+acronym_pairwise(Trial, Type, Instance, Example1, Example2) & z(Trial, Type, Instance, Example2) >> z(Trial, Type, Instance, Example1)	1

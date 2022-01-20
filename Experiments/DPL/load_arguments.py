@@ -31,11 +31,20 @@ def load_arguments():
     parser.add_argument('--dataroot', type=str,
                         default='Experiments/DPL/data/pubmed_parsed',
                         help='the data root')
-    parser.add_argument('--train_data', type=str, default='chunk_train_41_gene.pkl',
+    parser.add_argument('--train_data',
+                        type=str,
+                        default='gene_0_new/0/soft_featureset_3/train_3.pkl',
+                        # default='chunk_train_41_gene.pkl',
                         help='train data')
-    parser.add_argument('--val_data', type=str, default='validation_gene_1_soft.pkl',
+    parser.add_argument('--val_data',
+                        type=str,
+                        default='gene_0_new/0/soft_featureset_3/validation_5.pkl',
+                        # default='validation_gene_1_soft.pkl',
                         help='val data')
-    parser.add_argument('--test_data', type=str, default='test_gene_1_soft.pkl',
+    parser.add_argument('--test_data',
+                        type=str,
+                        default='gene_0_new/0/soft_featureset_3/test_5.pkl',
+                        # default='test_gene_1_soft.pkl',
                         help='test data')
     parser.add_argument('--vocab_path', type=str,
                         default="Experiments/DPL/data/pubmed_parsed/vocab_gene.pkl",

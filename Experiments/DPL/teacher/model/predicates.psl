@@ -9,4 +9,10 @@ special_char	True	4
 special_token	True	4
 str_length	True	4
 token_length	True	4
+acronym	True	4
+cross_sentence	True	4
+cross_sentence_pairwise	True	5
+acronym_pairwise	True	5
+logical_connective	True	5
+same_mention	True	5
 z	False	4
