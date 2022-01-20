@@ -12,6 +12,7 @@ from config_concordia import config_concordia
 from neural_network_models.ncf import NCF
 from config import neural_network_config, optimiser_config, concordia_config
 data_split = 'train'
+from sklearn.metrics import f1_score, precision_score, recall_score, accuracy_score
 
 
 def extract_movielens_data(data_split, path_to_data):
@@ -40,6 +41,7 @@ class MovieLensDataset(data.Dataset):
         x = df_ratings[['user_id', 'item_id']].values
         y = df_ratings[['rating']].values
         return x, y
+
 
 def run(data_fraction):
     # Load Data

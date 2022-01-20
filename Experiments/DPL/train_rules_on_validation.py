@@ -13,7 +13,7 @@ from Concordia.Student import Student
 from data_preparation import *
 from config_concordia import config_concordia
 from Concordia.Teacher import PSLTeacher
-from Experiments.DPL.KnowledgeBaseFactory import KnowledgeBaseFactory
+from Experiments.DPL.KnowledgeBaseFactory_Validation import KnowledgeBaseFactory
 from metrics import *
 from validation_utils import *
 from Concordia.ConcordiaNetwork import ConcordiaNetwork
@@ -95,38 +95,16 @@ def main(opt):
     # dataset
     training_file_path = os.path.join(opt.dataroot, opt.train_data)
     validation_file_path = os.path.join(opt.dataroot, opt.val_data)
-    train_data = load_pickle_data(training_file_path)
-    # model
-    model = EncoderRNN(opt.embed_size,
-                       opt.hidden_size,
-                       vocab_size,
-                       opt.num_layer,
-                       opt.cell,
-                       wordvec,
-                       opt.class_label,
-                       opt.initial_model)
-
-    if opt.cuda:
-        model = model.cuda()
-
-    optimizer = optim.SGD(model.parameters(), lr=opt.lr, momentum=opt.momentum)
-    student = Student(model, None, optimizer)
+    validation_data = load_pickle_data(validation_file_path)
 
     knowledge_base_factory = KnowledgeBaseFactory('Experiments/DPL/teacher/train')
+    config_concordia['train_teacher'] = True
+
     teacher_psl = PSLTeacher(predicates_to_infer=['z'],
                              knowledge_base_factory=knowledge_base_factory,
                              **config_concordia)
-    psl_predictions = teacher_psl.predict(train_data)
-
-    concordia = ConcordiaNetwork(student, teacher_psl, **concordia_config)
-
-    train_data_loader = EntityLinkingDataset(training_file_path, vocab, psl_predictions)
-    valid_data_loader = EntityLinkingDataset(validation_file_path, vocab, psl_predictions, is_validation=True)
-
-    concordia.fit(train_data_loader, valid_data_loader, metrics={'f1_score': f1_score,
-                                                                 'accuracy_score': accuracy_score,
-                                                                 'recall_score': recall_score,
-                                                                 'precision_score': precision_score})
+    teacher_psl.fit(validation_data, None)
+    teacher_psl.write_model_to_file('Experiments/DPL/teacher/saved_model/optimal_model.psl')
 
 
 if __name__ == '__main__':

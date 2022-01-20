@@ -43,6 +43,7 @@ class ConcordiaNetwork:
                                                                metrics,
                                                                loss.item()))
                 t.set_postfix(self.logger.build_epoch_log(batches_metrics, 'Training', self._epoch))
+                break
         return batches_metrics
 
     def _fit_online(self, train_data_loader, metrics=None):
@@ -125,7 +126,7 @@ class ConcordiaNetwork:
 
     def _evaluate_custom_metrics(self, student_predictions, targets, metrics):
         metric_results = {}
-        if not metrics:
+        if not metrics or targets is None:
             return metric_results
         for metric_name, metric_fn in metrics.items():
             val = metric_fn(student_predictions, targets)

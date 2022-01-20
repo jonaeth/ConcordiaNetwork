@@ -23,5 +23,6 @@ config_concordia = {
     'jvm_options': ['-Xms4096M', '-Xmx12000M'],
     'teacher_student_distributions_comparison': [True, False],
     'markov_blanket_file': 'markov_blanket.psl',
-    'predicates_folder': 'Experiments/DPL/teacher/train'
+    'predicates_folder': 'Experiments/DPL/teacher/train',
+    'supervision': 'unsupervised'  # 'semi-supervised', 'supervised'
 }

@@ -32,7 +32,7 @@ def compute_dpl_loss(predictions, targets, args):
 # train procedure, we can use more complicated optimization method
 def train_m_step_rnn(epoch, student, train_loader, args):
     student.model.train()
-    for batch_idx, (data, batch_mask, mask, length, target) in enumerate(train_loader):
+    for batch_idx, (data, batch_mask, mask, length, target) in tqdm(enumerate(train_loader)):
         if args.cuda:
             data, batch_mask, mask, target = data.cuda(), batch_mask.cuda().byte(), mask.cuda(), target.cuda()
         output = student.predict((data, batch_mask, mask))[0]

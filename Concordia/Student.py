@@ -1,3 +1,4 @@
+import torch
 from torch.optim import Adam
 
 
@@ -15,7 +16,7 @@ class Student:
 
     def _set_student_loss(self, student_loss_function):
         if student_loss_function is None:
-            return lambda x, y: 0
+            return lambda x, y: torch.Tensor([0])
         else:
             return student_loss_function
 
