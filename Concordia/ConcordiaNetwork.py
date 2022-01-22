@@ -43,7 +43,7 @@ class ConcordiaNetwork:
                     loss = self._get_teacher_student_loss(self._to_device(teacher_prediction), student_prediction)
                     self.student.fit(loss)
                     batches_metrics.append(self._get_batch_metrics(self._detach_variables(student_prediction),
-                                                                   target,
+                                                                   self._detach_variables(target),
                                                                    metrics,
                                                                    loss.item()))
                     t.set_postfix(self.logger.build_epoch_log(batches_metrics, 'Training-usnupervised', self._epoch))
@@ -62,7 +62,7 @@ class ConcordiaNetwork:
                     self.student.fit(loss)
 
                     batches_metrics.append(self._get_batch_metrics(self._detach_variables(student_prediction),
-                                                                   target,
+                                                                   self._detach_variables(target),
                                                                    metrics,
                                                                    loss.item()))
 
@@ -73,7 +73,7 @@ class ConcordiaNetwork:
         batches_metrics = []
         for epoch in range(1, epochs + 1):
             with tqdm(labeled_training_data) as t:
-                for training_input, _, target in t:
+                for training_input, target in t:
                     student_prediction = self.student.predict(self._to_device(training_input))
                     loss = self.student.loss_fn(student_prediction, self._to_device(target).to(torch.float32))
                     self.student.fit(loss)
