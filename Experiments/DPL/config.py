@@ -19,7 +19,7 @@ optimiser_config = {
 }
 
 concordia_config = {
-    'gpu_device': False,
+    'gpu_device': True,
     'train_online': False,
     'regression': False,
     'teacher_student_distributions_comparison': [True],
