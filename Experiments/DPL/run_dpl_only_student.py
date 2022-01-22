@@ -49,7 +49,6 @@ def main(opt):
     vocab_size = len(vocab)
     print("vocab size:{}".format(vocab_size))
     opt.vocab = vocab
-    result = None
     # dataset
     training_file_path = os.path.join(opt.dataroot, opt.train_data)
     validation_file_path = os.path.join(opt.dataroot, opt.val_data)
@@ -77,20 +76,10 @@ def main(opt):
     optimizer = optim.SGD(model.parameters(), lr=opt.lr, momentum=opt.momentum)
     student = Student(model, None, optimizer)
 
-    knowledge_base_factory = KnowledgeBaseFactory('Experiments/DPL/teacher/train')
-    teacher_psl = PSLTeacher(predicates_to_infer=['z'],
-                             knowledge_base_factory=knowledge_base_factory,
-                             **config_concordia)
 
-    teacher_psl.fit(labeled_train_data, None)
+    concordia = ConcordiaNetwork(student, None, **concordia_config)
 
-    psl_predictions_unlabeled = teacher_psl.predict(train_data)
-    psl_predictions_labeled = teacher_psl.predict(labeled_train_data)
-
-    concordia = ConcordiaNetwork(student, teacher_psl, **concordia_config)
-
-    train_data_loader_labeled = EntityLinkingDataset(labeled_train_data, vocab, psl_predictions_labeled)
-    train_data_loader_unlabeled = EntityLinkingDataset(train_data, vocab, psl_predictions_unlabeled)
+    train_data_loader_labeled = EntityLinkingDataset(labeled_train_data, vocab, None)
     valid_data_loader = EntityLinkingDataset(validation_data, vocab, None, is_validation=True)
 
     valid_data_loader = torch.utils.data.DataLoader(
@@ -111,16 +100,8 @@ def main(opt):
         collate_fn=collate_fn
     )
 
-    train_data_loader_unlabeled = torch.utils.data.DataLoader(
-        train_data_loader_unlabeled,
-        batch_size=64,
-        shuffle=True,
-        num_workers=0,
-        drop_last=True,
-        collate_fn=collate_fn
-    )
 
-    concordia.fit_semisupervised(train_data_loader_unlabeled, train_data_loader_labeled, valid_data_loader, epochs=10, metrics={'f1_score': f1_score,
+    concordia.fit_student_alone(train_data_loader_labeled, valid_data_loader, epochs=10, metrics={'f1_score': f1_score,
                                                                  'accuracy_score': accuracy_score,
                                                                  'recall_score': recall_score,
                                                                  'precision_score': precision_score})

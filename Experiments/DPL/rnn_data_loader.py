@@ -31,6 +31,7 @@ def collate_fn(data):
 
     if len(data[0]) == 2:
         psl_predictions = [d[1] for d in data]
+        psl_predictions = [[1 - e, e] for e in psl_predictions]
         text, mask, label = zip(*[d[0] for d in data])
 
     else:
@@ -68,12 +69,13 @@ def collate_fn(data):
 
     labels = torch.zeros(len(mask), 2).float()
 
+
     for i, l in enumerate(label):
         labels[i, :] = l
     if psl_predictions is None:
         return (targets, batch_masks.bool(), masks), labels
     else:
-        return (targets, batch_masks.bool(), masks), psl_predictions, labels
+        return (targets, batch_masks.bool(), masks), [torch.tensor(psl_predictions)], labels
 
 class RnnDataLoader:
     

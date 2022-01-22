@@ -67,7 +67,23 @@ class ConcordiaNetwork:
                                                                    loss.item()))
 
                     t.set_postfix(self.logger.build_epoch_log(batches_metrics, 'Training-supervised', self._epoch))
-                    break
+            self._evaluate_student(val_data_loader, callbacks, metrics)
+
+    def fit_student_alone(self, labeled_training_data, val_data_loader, epochs, callbacks=[], metrics={}):
+        batches_metrics = []
+        for epoch in range(1, epochs + 1):
+            with tqdm(labeled_training_data) as t:
+                for training_input, _, target in t:
+                    student_prediction = self.student.predict(self._to_device(training_input))
+                    loss = self.student.loss_fn(student_prediction, self._to_device(target).to(torch.float32))
+                    self.student.fit(loss)
+
+                    batches_metrics.append(self._get_batch_metrics(self._detach_variables(student_prediction),
+                                                                   target,
+                                                                   metrics,
+                                                                   loss.item()))
+
+                    t.set_postfix(self.logger.build_epoch_log(batches_metrics, 'Training-supervised', self._epoch))
             self._evaluate_student(val_data_loader, callbacks, metrics)
 
     def _fit_precomputed_teacher_predictions(self, train_data_loader, metrics=None):
@@ -124,7 +140,7 @@ class ConcordiaNetwork:
             if do_comparison:
                 kl_divergence_loss += kl_divergence(student_predictions[task_index].to(torch.float32),
                                                     teacher_predictions[task_index].to(torch.float32))
-        return torch.tensor(kl_divergence_loss)
+        return kl_divergence_loss
 
     def _detach_variables(self, variables):
         return [variable.detach().cpu() for variable in variables]
