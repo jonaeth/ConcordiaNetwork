@@ -40,9 +40,14 @@ class ConcordiaNetwork:
             with tqdm(unlabled_train_data_loader) as t:
                 for training_input, teacher_prediction, target in t:
                     student_prediction = self.student.predict(self._to_device(training_input))
-                    loss = self._get_teacher_student_loss(teacher_prediction, student_prediction)
+                    loss = self._get_teacher_student_loss(self._to_device(teacher_prediction), student_prediction)
                     self.student.fit(loss)
+                    batches_metrics.append(self._get_batch_metrics(self._detach_variables(student_prediction),
+                                                                   target,
+                                                                   metrics,
+                                                                   loss.item()))
                     t.set_postfix(self.logger.build_epoch_log(batches_metrics, 'Training-usnupervised', self._epoch))
+                    break
             self._evaluate_student(val_data_loader, callbacks, metrics)
 
 
@@ -56,7 +61,14 @@ class ConcordiaNetwork:
                                              self._to_device(teacher_prediction),
                                              self._to_device(target))
                     self.student.fit(loss)
+
+                    batches_metrics.append(self._get_batch_metrics(self._detach_variables(student_prediction),
+                                                                   target,
+                                                                   metrics,
+                                                                   loss.item()))
+
                     t.set_postfix(self.logger.build_epoch_log(batches_metrics, 'Training-supervised', self._epoch))
+                    break
             self._evaluate_student(val_data_loader, callbacks, metrics)
 
     def _fit_precomputed_teacher_predictions(self, train_data_loader, metrics=None):

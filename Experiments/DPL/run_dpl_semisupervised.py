@@ -128,7 +128,7 @@ def main(opt):
 
     train_data_loader_labeled = EntityLinkingDataset(labeled_train_data, vocab, psl_predictions_labeled)
     train_data_loader_unlabeled = EntityLinkingDataset(train_data, vocab, psl_predictions_unlabeled)
-    valid_data_loader = EntityLinkingDataset(validation_data, vocab, None)
+    valid_data_loader = EntityLinkingDataset(validation_data, vocab, None, is_validation=True)
 
     valid_data_loader = torch.utils.data.DataLoader(
         valid_data_loader,
