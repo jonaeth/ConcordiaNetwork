@@ -120,6 +120,7 @@ def main(opt):
                              **config_concordia)
 
     teacher_psl.fit(labeled_train_data, None)
+
     psl_predictions_unlabeled = teacher_psl.predict(train_data)
     psl_predictions_labeled = teacher_psl.predict(labeled_train_data)
 
