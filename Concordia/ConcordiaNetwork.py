@@ -47,7 +47,6 @@ class ConcordiaNetwork:
                                                                    metrics,
                                                                    loss.item()))
                     t.set_postfix(self.logger.build_epoch_log(batches_metrics, 'Training-usnupervised', self._epoch))
-                    break
             self._evaluate_student(val_data_loader, callbacks, metrics)
 
 
