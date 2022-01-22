@@ -161,12 +161,12 @@ class ConcordiaNetwork:
         batches_metrics = []
         t = tqdm(val_data_loader)
         for validation_input, target in t:
-            student_prediction = self.student.predict(validation_input)
+            student_prediction = self.student.predict(self._to_device(validation_input))
             if self.regression:
-                loss = self.student.loss_fn(student_prediction[0], target)
+                loss = self.student.loss_fn(student_prediction[0], self._to_device(target))
             else:
-                loss = self.student.loss_fn(student_prediction, target)
-            batches_metrics.append(self._get_batch_metrics(student_prediction, target, metrics, loss.item()))
+                loss = self.student.loss_fn(student_prediction, self._to_device(target))
+            batches_metrics.append(self._get_batch_metrics(student_prediction, self._to_device(target), metrics, loss.item()))
             t.set_postfix(self.logger.build_epoch_log(batches_metrics, 'Validation', self._epoch))
 
         epoch_log = self.logger.build_epoch_log(batches_metrics, 'Test', self._epoch)
