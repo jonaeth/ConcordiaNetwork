@@ -26,7 +26,7 @@ from config import neural_network_config, optimiser_config, concordia_config
 from text_folder_rnn import TxtFolder_RNN
 from rnn_data_loader import collate_fn
 from visualizer import make_html_file, make_html_file_confidence
-
+import torch.nn as nn
 import torch.utils.data as data
 
 
@@ -79,7 +79,13 @@ def main(opt):
         model = model.cuda()
 
     optimizer = optim.SGD(model.parameters(), lr=opt.lr, momentum=opt.momentum)
-    student = Student(model, None, optimizer)
+
+    def student_loss(student_predictions, targets):
+        loss = nn.CrossEntropyLoss()
+        return loss(student_predictions, targets)
+
+
+    student = Student(model, student_loss, optimizer)
 
     knowledge_base_factory = KnowledgeBaseFactory('Experiments/DPL/teacher/train')
     teacher_psl = PSLTeacher(predicates_to_infer=['z'],

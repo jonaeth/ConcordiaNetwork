@@ -1,5 +1,9 @@
 from __future__ import print_function
 
+import sys
+
+sys.path.append('.')
+
 import sklearn.model_selection
 import torch
 import torch.nn.functional as F
@@ -9,6 +13,7 @@ from NeuralNetworkModels.EncoderRNN import EncoderRNN
 from data_loader import CreateDataLoader
 import os
 import sys
+import torch.nn as nn
 from load_arguments import load_arguments
 from Concordia.Student import Student
 from data_preparation import *
@@ -36,9 +41,7 @@ class EntityLinkingDataset(data.Dataset):
         return len(self.dataset)
 
     def __getitem__(self, index):
-        if self.is_validation:
-            return self.dataset[index]
-        return self.dataset[index], self.psl_predictions[0][index]
+        return self.dataset[index]
 
 
 def main(opt):
@@ -74,7 +77,12 @@ def main(opt):
         model = model.cuda()
 
     optimizer = optim.SGD(model.parameters(), lr=opt.lr, momentum=opt.momentum)
-    student = Student(model, None, optimizer)
+
+    def student_loss(student_predictions, targets):
+        loss = nn.CrossEntropyLoss()
+        return loss(student_predictions[0], targets)
+    student = Student(model, student_loss, optimizer)
+
 
 
     concordia = ConcordiaNetwork(student, None, **concordia_config)
@@ -99,6 +107,9 @@ def main(opt):
         drop_last=True,
         collate_fn=collate_fn
     )
+
+
+
 
 
     concordia.fit_student_alone(train_data_loader_labeled, valid_data_loader, epochs=10, metrics={'f1_score': f1_score,
