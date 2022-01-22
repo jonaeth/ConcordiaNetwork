@@ -131,7 +131,7 @@ class ConcordiaNetwork:
             student_predictions_val = student_predictions
             student_predictions_distribution = student_predictions
         return 0.5 * self._get_teacher_student_loss(teacher_predictions, student_predictions_distribution) \
-               + 0.5 * self.student.loss_fn(student_predictions_val, target_values.to(torch.float32))
+               + 0.5 * self._to_device(self.student.loss_fn(student_predictions_val, target_values.to(torch.float32)))
 
 
     def _get_teacher_student_loss(self, teacher_predictions, student_predictions):
