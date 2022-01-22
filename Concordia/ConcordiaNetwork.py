@@ -125,7 +125,7 @@ class ConcordiaNetwork:
             if do_comparison:
                 kl_divergence_loss += kl_divergence(student_predictions[task_index].to(torch.float32),
                                                     teacher_predictions[task_index].to(torch.float32))
-        return kl_divergence_loss
+        return torch.tensor(kl_divergence_loss)
 
     def _detach_variables(self, variables):
         return [variable.detach().cpu() for variable in variables]
