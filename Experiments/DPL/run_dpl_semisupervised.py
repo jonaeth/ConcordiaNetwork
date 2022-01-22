@@ -1,5 +1,9 @@
 from __future__ import print_function
 
+import sys
+
+sys.path.append('.')
+
 import sklearn.model_selection
 import torch
 import torch.nn.functional as F
