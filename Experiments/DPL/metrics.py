@@ -17,20 +17,20 @@ def print_log_metrics(loss, accuracy, precision, recall, f1):
 
 
 def f1_score(predictions, targets):
-    f1 = metrics.f1_score([targets.argmax().detach().numpy()], [torch.exp(predictions[0]).argmax().detach().numpy()])
+    f1 = metrics.f1_score(targets.argmax(axis=1).detach().numpy(), torch.exp(predictions[0]).argmax(axis=1).detach().numpy())
     return torch.Tensor([f1])
 
 
 def precision_score(predictions, targets):
-    precision = metrics.precision_score([targets.argmax().detach().numpy()], [torch.exp(predictions[0]).argmax().detach().numpy()])
+    precision = metrics.precision_score(targets.argmax(axis=1).detach().numpy(), torch.exp(predictions[0]).argmax(axis=1).detach().numpy())
     return torch.Tensor([precision])
 
 
 def recall_score(predictions, targets):
-    recall = metrics.recall_score([targets.argmax().detach().numpy()], [torch.exp(predictions[0]).argmax().detach().numpy()])
+    recall = metrics.recall_score(targets.argmax(axis=1).detach().numpy(), torch.exp(predictions[0]).argmax(axis=1).detach().numpy())
     return torch.Tensor([recall])
 
 
 def accuracy_score(predictions, targets):
-    accuracy = metrics.accuracy_score([targets.argmax().detach().numpy()], [torch.exp(predictions[0]).argmax().detach().numpy()])
+    accuracy = metrics.accuracy_score(targets.argmax(axis=1).detach().numpy(), torch.exp(predictions[0]).argmax(axis=1).detach().numpy())
     return torch.Tensor([accuracy])

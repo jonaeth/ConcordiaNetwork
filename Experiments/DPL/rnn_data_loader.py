@@ -1,4 +1,6 @@
 import random
+
+import numpy as np
 import torch.utils.data
 import torchvision.transforms as transforms
 from base_data_loader import BaseDataLoader
@@ -27,7 +29,14 @@ def collate_fn(data):
 
     data.sort(key=lambda x: len(x[0]), reverse=True)
 
-    text, mask, label = zip(*data)
+    if len(data[0]) == 2:
+        psl_predictions = [d[1] for d in data]
+        text, mask, label = zip(*[d[0] for d in data])
+
+    else:
+        psl_predictions = None
+        text, mask, label = zip(*data)
+
     # Merge captions (from tuple of 1D tensor to 2D tensor).
     lengths = [len(cap) for cap in text]
     
@@ -58,10 +67,13 @@ def collate_fn(data):
     
 
     labels = torch.zeros(len(mask), 2).float()
+
     for i, l in enumerate(label):
         labels[i, :] = l
-
-    return targets, batch_masks.bool(), masks, torch.tensor(lengths), labels
+    if psl_predictions is None:
+        return (targets, batch_masks.bool(), masks), labels
+    else:
+        return (targets, batch_masks.bool(), masks), psl_predictions, labels
 
 class RnnDataLoader:
     

@@ -29,6 +29,36 @@ class ConcordiaNetwork:
             self._run_callbacks(callbacks, 'epoch_end', epoch_log)
             self._evaluate_student(val_data_loader, callbacks, metrics)
 
+    def fit_semisupervised(self, unlabled_train_data_loader, labeled_train_data_loader, val_data_loader, epochs, metrics={}):
+        for epoch in range(1, epochs + 1):
+            self.fit_supervised(labeled_train_data_loader, val_data_loader, 1, metrics=metrics)
+            self.fit_unsupervised(unlabled_train_data_loader, val_data_loader, 1, metrics=metrics)
+
+    def fit_unsupervised(self, unlabled_train_data_loader, val_data_loader, epochs, callbacks=[], metrics={}):
+        batches_metrics = []
+        for epoch in range(1, epochs + 1):
+            with tqdm(unlabled_train_data_loader) as t:
+                for training_input, teacher_prediction, target in t:
+                    student_prediction = self.student.predict(self._to_device(training_input))
+                    loss = self._get_teacher_student_loss(teacher_prediction, student_prediction)
+                    self.student.fit(loss)
+                    t.set_postfix(self.logger.build_epoch_log(batches_metrics, 'Training-usnupervised', self._epoch))
+            self._evaluate_student(val_data_loader, callbacks, metrics)
+
+
+    def fit_supervised(self, labeled_training_data, val_data_loader, epochs, callbacks=[], metrics={}):
+        batches_metrics = []
+        for epoch in range(1, epochs + 1):
+            with tqdm(labeled_training_data) as t:
+                for training_input, teacher_prediction, target in t:
+                    student_prediction = self.student.predict(self._to_device(training_input))
+                    loss = self.compute_loss(student_prediction,
+                                             self._to_device(teacher_prediction),
+                                             self._to_device(target))
+                    self.student.fit(loss)
+                    t.set_postfix(self.logger.build_epoch_log(batches_metrics, 'Training-supervised', self._epoch))
+            self._evaluate_student(val_data_loader, callbacks, metrics)
+
     def _fit_precomputed_teacher_predictions(self, train_data_loader, metrics=None):
         batches_metrics = []
         with tqdm(train_data_loader) as t:
@@ -43,7 +73,6 @@ class ConcordiaNetwork:
                                                                metrics,
                                                                loss.item()))
                 t.set_postfix(self.logger.build_epoch_log(batches_metrics, 'Training', self._epoch))
-                break
         return batches_metrics
 
     def _fit_online(self, train_data_loader, metrics=None):

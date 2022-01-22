@@ -11,7 +11,7 @@ str_length	True	4
 token_length	True	4
 acronym	True	4
 cross_sentence	True	4
-cross_sentence_pairwise	True	5
+cross_sentence_pairwise	True	4
 acronym_pairwise	True	5
 logical_connective	True	5
 same_mention	True	5

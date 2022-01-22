@@ -144,7 +144,8 @@ class PSLTeacher(Teacher):
                 if not predicate:
                     predictions.append(torch.Tensor([]))
                 else:
-                    psl_predictions = results[self.model.get_predicate(predicate)]['truth'].values
+                    psl_predictions = self.reorder_predictions_with_targets(results[self.model.get_predicate(predicate)],
+                                                                       self.model.get_predicate(predicate)._data[Partition.TARGETS])['truth'].values
                     # TODO: Correct this in other experiments - this logic should be outside of here.
                     '''
                     psl_predictions = results[self.model.get_predicate(predicate)]\
@@ -154,6 +155,10 @@ class PSLTeacher(Teacher):
                     '''
                     predictions.append(torch.Tensor(psl_predictions))
         return predictions
+
+
+    def reorder_predictions_with_targets(self, prediction_df, target_df):
+        return prediction_df.set_index([0, 1, 2, 3]).reindex(index=target_df[[0, 1, 2, 3]]).reset_index()
 
     def _set_ground_predicates(self, teacher_input, target):
         self.knowledge_base_factory.build_predicates(teacher_input, target)

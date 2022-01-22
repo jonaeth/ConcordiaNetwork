@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import sklearn.model_selection
 import torch
 import torch.nn.functional as F
 from torch.nn import KLDivLoss
@@ -35,15 +36,9 @@ class EntityLinkingDataset(data.Dataset):
         return len(self.dataset)
 
     def __getitem__(self, index):
-        nn_data = collate_fn([self.dataset[index]])
         if self.is_validation:
-            return (nn_data[0], nn_data[1], nn_data[2]), nn_data[2]
-        return (nn_data[0], nn_data[1], nn_data[2]), [self.psl_predictions[0][index]], None
-
-    def _split_rating_data_to_xy(self, df_ratings):
-        x = df_ratings[['user_id', 'item_id']].values
-        y = df_ratings[['rating']].values
-        return x, y
+            return self.dataset[index]
+        return self.dataset[index], self.psl_predictions[0][index]
 
 
 def compute_dpl_loss(predictions, targets, args):
@@ -96,6 +91,13 @@ def main(opt):
     training_file_path = os.path.join(opt.dataroot, opt.train_data)
     validation_file_path = os.path.join(opt.dataroot, opt.val_data)
     train_data = load_pickle_data(training_file_path)
+    validation_data = load_pickle_data(validation_file_path)
+
+    labeled_train_data, validation_data = sklearn.model_selection.train_test_split([(key, val) for key, val in validation_data.items()], test_size=0.5, random_state=2022)
+
+    labeled_train_data = {key: val for key, val in labeled_train_data}
+    validation_data = {key: val for key, val in validation_data}
+
     # model
     model = EncoderRNN(opt.embed_size,
                        opt.hidden_size,
@@ -116,14 +118,45 @@ def main(opt):
     teacher_psl = PSLTeacher(predicates_to_infer=['z'],
                              knowledge_base_factory=knowledge_base_factory,
                              **config_concordia)
-    psl_predictions = teacher_psl.predict(train_data)
+
+    teacher_psl.fit(labeled_train_data, None)
+    psl_predictions_unlabeled = teacher_psl.predict(train_data)
+    psl_predictions_labeled = teacher_psl.predict(labeled_train_data)
 
     concordia = ConcordiaNetwork(student, teacher_psl, **concordia_config)
 
-    train_data_loader = EntityLinkingDataset(training_file_path, vocab, psl_predictions)
-    valid_data_loader = EntityLinkingDataset(validation_file_path, vocab, psl_predictions, is_validation=True)
+    train_data_loader_labeled = EntityLinkingDataset(labeled_train_data, vocab, psl_predictions_labeled)
+    train_data_loader_unlabeled = EntityLinkingDataset(train_data, vocab, psl_predictions_unlabeled)
+    valid_data_loader = EntityLinkingDataset(validation_data, vocab, None)
 
-    concordia.fit(train_data_loader, valid_data_loader, metrics={'f1_score': f1_score,
+    valid_data_loader = torch.utils.data.DataLoader(
+        valid_data_loader,
+        batch_size=256,
+        shuffle=True,
+        num_workers=0,
+        drop_last=True,
+        collate_fn=collate_fn
+    )
+
+    train_data_loader_labeled = torch.utils.data.DataLoader(
+        train_data_loader_labeled,
+        batch_size=64,
+        shuffle=True,
+        num_workers=0,
+        drop_last=True,
+        collate_fn=collate_fn
+    )
+
+    train_data_loader_unlabeled = torch.utils.data.DataLoader(
+        train_data_loader_unlabeled,
+        batch_size=64,
+        shuffle=True,
+        num_workers=0,
+        drop_last=True,
+        collate_fn=collate_fn
+    )
+
+    concordia.fit_semisupervised(train_data_loader_unlabeled, train_data_loader_labeled, valid_data_loader, epochs=10, metrics={'f1_score': f1_score,
                                                                  'accuracy_score': accuracy_score,
                                                                  'recall_score': recall_score,
                                                                  'precision_score': precision_score})

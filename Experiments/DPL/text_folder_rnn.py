@@ -93,17 +93,18 @@ class TxtFolder_RNN(data.Dataset):
                     maxi_num += 1
 
         self.vocab = vocab
-        
+        '''
         # sort the data according to the data len to reduce the memory
         indices = sorted(range(len(self.lens)), key=lambda k: self.lens[k])
         self.sort_instance = self.instance
         for i in range(len(indices)):
             self.sort_instance[i] = self.instance[indices[i]]
-        
+       
         self.instance = self.sort_instance
+        '''
         # del this varaible to save memory
         del self.data
-        del self.sort_instance
+        #del self.sort_instance
 
     # we need to modify this rnn version    
     def __getitem__(self, index):
