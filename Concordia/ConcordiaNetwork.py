@@ -42,7 +42,7 @@ class ConcordiaNetwork:
                     student_prediction = self.student.predict(self._to_device(training_input))
                     loss = self._get_teacher_student_loss(self._to_device(teacher_prediction), student_prediction)
                     self.student.fit(loss)
-                    batches_metrics.append({'loss': loss})
+                    batches_metrics.append({'loss': self._detach_variables()})
                     t.set_postfix(self.logger.build_epoch_log(batches_metrics, 'Training-usnupervised', self._epoch))
             self._evaluate_student(val_data_loader, callbacks, metrics)
 

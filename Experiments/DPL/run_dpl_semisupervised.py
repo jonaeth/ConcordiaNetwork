@@ -82,7 +82,7 @@ def main(opt):
 
     def student_loss(student_predictions, targets):
         loss = nn.CrossEntropyLoss()
-        return loss(student_predictions, targets)
+        return loss(student_predictions[0], targets)
 
 
     student = Student(model, student_loss, optimizer)
