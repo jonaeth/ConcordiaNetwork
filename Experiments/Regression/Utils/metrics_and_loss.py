@@ -9,7 +9,7 @@ def l2_regularization_term(model, l2_lambda):
 
 def RMSE_LOSS(y_pred, y_true):
     loss_fn = torch.nn.MSELoss()
-    return torch.sqrt(loss_fn(y_pred, y_true))
+    return torch.sqrt(loss_fn(y_pred, y_true.reshape(-1)))
 
 def custom_RMSE_LOSS(y_pred, y_true):
     return RMSE_LOSS(y_pred[0], y_true)
