@@ -78,7 +78,7 @@ def main(opt):
     if opt.cuda:
         model = model.cuda()
 
-    optimizer = optim.SGD(model.parameters(), lr=opt.lr, momentum=opt.momentum)
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
 
     def student_loss(student_predictions, targets):
         loss = nn.CrossEntropyLoss()
