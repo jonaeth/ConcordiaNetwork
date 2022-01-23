@@ -41,10 +41,11 @@ class ConcordiaNetwork:
             with tqdm(unlabled_train_data_loader) as t:
                 for training_input, teacher_prediction, target in t:
                     student_prediction = self.student.predict(self._to_device(training_input))
-                    loss = self.compute_weighted_loss_dpl_experiment_unsupervised(self._to_device(teacher_prediction)[0], student_prediction[0])
+                    loss = self.compute_weighted_loss_dpl_experiment_unsupervised(student_prediction[0], self._to_device(teacher_prediction)[0])
                     self.student.fit(loss)
                     batches_metrics.append({'loss': loss.item()})
                     t.set_postfix(self.logger.build_epoch_log(batches_metrics, 'Training-usnupervised', self._epoch))
+
             self._evaluate_student(val_data_loader, callbacks, metrics)
 
 
@@ -60,6 +61,7 @@ class ConcordiaNetwork:
                     batches_metrics.append({'loss': loss.item()})
 
                     t.set_postfix(self.logger.build_epoch_log(batches_metrics, 'Training-supervised', self._epoch))
+
             self._evaluate_student(val_data_loader, callbacks, metrics)
 
     def fit_student_alone(self, labeled_training_data, val_data_loader, epochs, callbacks=[], metrics={}):
@@ -122,6 +124,8 @@ class ConcordiaNetwork:
         num_neg = float(sum(target[:, 0] > target[:, 1]))
         mask_pos = (target[:, 0] <= target[:, 1]).cpu().float()
         mask_neg = (target[:, 0] > target[:, 1]).cpu().float()
+        if num_neg == 0 or num_pos == 0:
+            return mask_pos
         weight = mask_pos * (num_pos + num_neg) / num_pos
         weight += mask_neg * (num_pos + num_neg) / num_neg
         return weight
@@ -130,7 +134,7 @@ class ConcordiaNetwork:
     def compute_weighted_loss_dpl_experiment_unsupervised(self, student_predictions, targets):
         class_weights = self.get_data_balancing_weights(student_predictions, targets)
         class_weights = self._to_device(class_weights)
-        loss = F.kl_div(student_predictions, targets, reduction='none')
+        loss = F.kl_div(F.log_softmax(student_predictions, dim=1), targets, reduction='none')
         loss = loss.sum(dim=1) * class_weights
         loss = loss.mean()
         return loss
@@ -138,9 +142,9 @@ class ConcordiaNetwork:
     def compute_weighted_loss_dpl_experiment_supervised(self, student_predictions, teacher_predictions, targets):
         class_weights = self.get_data_balancing_weights(student_predictions, targets)
         class_weights = self._to_device(class_weights)
-        loss = F.kl_div(student_predictions, teacher_predictions, reduction='none')
+        loss = F.kl_div(F.log_softmax(student_predictions, dim=1), teacher_predictions, reduction='none')
         cross_entropy_loss = nn.CrossEntropyLoss(reduction='none')
-        loss = (loss.sum(dim=1) + cross_entropy_loss(student_predictions, targets)) * class_weights * 0.5
+        loss = (loss.sum(dim=1) + cross_entropy_loss(F.softmax(student_predictions, dim=1), targets)) * class_weights * 0.5
         loss = loss.mean()
         return loss
 
