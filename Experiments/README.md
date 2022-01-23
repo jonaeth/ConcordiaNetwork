@@ -51,7 +51,7 @@ For example, consider the [`model.psl` file](CollectiveActivity/teacher/model/mo
 ```text
 [predicate name(type string)][\t][closed world assumption(type Boolean)][\t][arity(type int)]
 ```
-###Train
+### Train
 The train folder contains the training data in a format that is readable by PSL. The files inside are typically built by the `KnowledgeBaseFactory` in each Experiment.
 
 The structure of the folders that is expected, yet also automatically built by the `KnowledgeBaseFactory` is
@@ -63,7 +63,7 @@ The structure of the folders that is expected, yet also automatically built by t
 ```
 
 - In `observations` all the observed ground atoms are stored.
-- In targets the unobserved ground atoms without their truth assignments are stored. 
+- In `targets` the unobserved ground atoms without their truth assignments are stored. 
 - In `truths` the unobserved ground variables ares stored with their truth assignments.
 
 ```text
