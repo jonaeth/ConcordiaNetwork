@@ -56,5 +56,5 @@ class EncoderRNN(nn.Module):
 
         response = self.linear(output.view(batch, -1))
 
-        return F.softmax(response, dim=1),
+        return response,
 

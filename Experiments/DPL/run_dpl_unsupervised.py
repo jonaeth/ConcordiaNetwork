@@ -44,7 +44,21 @@ class EntityLinkingDataset(data.Dataset):
         return self.dataset[index], self.psl_predictions[0][index]
 
 
+def get_data_balancing_weights(predictions, target):
+    # make the data balance
+    num_pos = float(sum(target[:, 0] <= target[:, 1]))
+    num_neg = float(sum(target[:, 0] > target[:, 1]))
+    mask_pos = (target[:, 0] <= target[:, 1]).cpu().float()
+    mask_neg = (target[:, 0] > target[:, 1]).cpu().float()
+    weight = mask_pos * (num_pos + num_neg) / num_pos
+    weight += mask_neg * (num_pos + num_neg) / num_neg
+    return weight
+
+
 def compute_dpl_loss(predictions, targets, args):
+    kl_loss = torch.nn.KLDivLoss(reduction='none')
+    kl_loss(F.log_softmax(predictions, dim=1), targets)
+
     class_weights = get_data_balancing_weights(targets, args)
     loss = F.kl_div(predictions, targets, reduction='none')
     loss = loss.sum(dim=1) * class_weights
