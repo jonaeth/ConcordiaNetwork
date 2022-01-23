@@ -54,8 +54,8 @@ class PSLTeacher(Teacher):
             self.psl_options = config['psl_options']
         else:
             self.psl_options = {
-                'log4j.threshold': 'OFF',
-                'votedperceptron.numsteps': '2'
+                'log4j.threshold': 'OFF'#,
+                #'votedperceptron.numsteps': '2'
             }  # TODO Discuss good default
         if 'jvm_options' in config:
             self.jvm_options = config['jvm_options']
@@ -104,7 +104,7 @@ class PSLTeacher(Teacher):
     def write_model_to_file(self, file_name):
         with open(file_name, 'w') as f:
             for rule in self.model.get_rules():
-                f.write(f'{rule._rule_body}\t{rule._weight}')
+                f.write(f'{rule._rule_body}\t{rule._weight}\n')
 
     def fit(self, teacher_input, target):
         self._set_ground_predicates(teacher_input, target)

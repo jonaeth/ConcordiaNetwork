@@ -18,6 +18,7 @@ class KnowledgeBaseFactory:
         # TODO: use self.path_to_save_predicates
         predicates = defaultdict(list)
         targets = []
+        truths = []
         for trial_id, trial in enumerate(training_data.keys()):
             for i in range(len(training_data[trial]['inc'])):
                 instance = training_data[trial]['inc'][i]
@@ -25,6 +26,8 @@ class KnowledgeBaseFactory:
                     continue
 
                 targets += [f"{trial_id}\t0\t{i}\t{example_id}" for example_id in range(len(instance['pos_neg_example']))]
+                truths += [f"{trial_id}\t0\t{i}\t{example_id}\t{instance['pos_neg_example'][example_id][2][1]}" for example_id in range(len(instance['pos_neg_example']))]
+
                 for rv_name, rv_value in instance['graph'].base_assignment.items():
                     if len(re.findall('[0-9]+', rv_name)) == 1:
                         example_id = re.findall('[0-9]+', rv_name)[0]
@@ -42,6 +45,8 @@ class KnowledgeBaseFactory:
                     continue
 
                 targets += [f"{trial_id}\t1\t{i}\t{example_id}" for example_id in range(len(instance['pos_neg_example']))]
+                truths += [f"{trial_id}\t1\t{i}\t{example_id}\t{instance['pos_neg_example'][example_id][2][1]}" for example_id in range(len(instance['pos_neg_example']))]
+
                 for rv_name, rv_value in instance['graph'].base_assignment.items():
                     if len(re.findall('[0-9]+', rv_name)) == 1:
                         example_id = re.findall('[0-9]+', rv_name)[0]
@@ -56,6 +61,10 @@ class KnowledgeBaseFactory:
 
         with open(f'Experiments/DPL/teacher/train/targets/z.psl', 'w') as f:
             for row in targets:
+                f.write(f'{row}\n')
+
+        with open(f'Experiments/DPL/teacher/train/truths/z.psl', 'w') as f:
+            for row in truths:
                 f.write(f'{row}\n')
 
         for predicate_name, groundings in predicates.items():

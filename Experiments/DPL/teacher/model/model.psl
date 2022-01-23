@@ -1,17 +1,9 @@
-case_str(Trial, Type, Instance, Example) >> z(Trial, Type, Instance, Example)	1
-z(Trial, Type, Instance, Example) >> case_str(Trial, Type, Instance, Example)	1
-case_token(Trial, Type, Instance, Example) >> z(Trial, Type, Instance, Example)	1
-z(Trial, Type, Instance, Example) >> case_token(Trial, Type, Instance, Example)	1
 entry_entropy(Trial, Type, Instance, Example) >> z(Trial, Type, Instance, Example)	1
-z(Trial, Type, Instance, Example) >> entry_entropy(Trial, Type, Instance, Example) 	1
+z(Trial, Type, Instance, Example) >> entry_entropy(Trial, Type, Instance, Example)	1
 mention_ctx_entropy(Trial, Type, Instance, Example) >> z(Trial, Type, Instance, Example)	1
 z(Trial, Type, Instance, Example) >> mention_ctx_entropy(Trial, Type, Instance, Example)	1
-postag(Trial, Type, Instance, Example) >> z(Trial, Type, Instance, Example)	1
 z(Trial, Type, Instance, Example) >> postag(Trial, Type, Instance, Example)	1
-special_char(Trial, Type, Instance, Example) >> z(Trial, Type, Instance, Example)	1
-z(Trial, Type, Instance, Example) >> special_char(Trial, Type, Instance, Example)	1
 special_token(Trial, Type, Instance, Example) >> z(Trial, Type, Instance, Example)	1
-z(Trial, Type, Instance, Example) >> special_token(Trial, Type, Instance, Example)	1
 str_length(Trial, Type, Instance, Example) >> z(Trial, Type, Instance, Example)	1
 z(Trial, Type, Instance, Example) >> str_length(Trial, Type, Instance, Example)	1
 token_length(Trial, Type, Instance, Example) >> z(Trial, Type, Instance, Example)	1
@@ -19,7 +11,5 @@ z(Trial, Type, Instance, Example) >> token_length(Trial, Type, Instance, Example
 same_mention(Trial, Type, Instance, Example1, Example2) & z(Trial, Type, Instance, Example1) >> z(Trial, Type, Instance, Example2)	1
 cross_sentence_pairwise(Trial, Type, Instance, Example1) >> z(Trial, Type, Instance, Example1)	1
 logical_connective(Trial, Type, Instance, Example1, Example2) & z(Trial, Type, Instance, Example1) >> z(Trial, Type, Instance, Example2)	1
-acronym_pairwise(Trial, Type, Instance, Example1, Example2) & z(Trial, Type, Instance, Example1) >> z(Trial, Type, Instance, Example2)	1
 same_mention(Trial, Type, Instance, Example1, Example2) & z(Trial, Type, Instance, Example2) >> z(Trial, Type, Instance, Example1)	1
-logical_connective(Trial, Type, Instance, Example1, Example2) & z(Trial, Type, Instance, Example2) >> z(Trial, Type, Instance, Example1)	1
-acronym_pairwise(Trial, Type, Instance, Example1, Example2) & z(Trial, Type, Instance, Example2) >> z(Trial, Type, Instance, Example1)	1
+acronym_pairwise(Trial, Type, Instance, Example1, Example2) & z(Trial, Type, Instance, Example1) >> z(Trial, Type, Instance, Example2)	1

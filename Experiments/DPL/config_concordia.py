@@ -16,8 +16,7 @@ config_concordia = {
     'teacher_model_path': 'Experiments/DPL/teacher/model',
     'ground_predicates_path': 'Experiments/DPL/teacher/train',
     'psl_options': {
-        'log4j.threshold': 'OFF',
-        'votedperceptron.numsteps': '2'
+        'log4j.threshold': 'OFF'
     },
     'cli_options': [],
     'jvm_options': ['-Xms4096M', '-Xmx12000M'],

@@ -1,16 +1,9 @@
-case_str	True	4
-case_token	True	4
 entry_entropy	True	4
 mention_ctx_entropy	True	4
-parsetree_label	True	4
-parsetree_label_neg	True	4
 postag	True	4
-special_char	True	4
 special_token	True	4
 str_length	True	4
 token_length	True	4
-acronym	True	4
-cross_sentence	True	4
 cross_sentence_pairwise	True	4
 acronym_pairwise	True	5
 logical_connective	True	5

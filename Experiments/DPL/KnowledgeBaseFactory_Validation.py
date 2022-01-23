@@ -44,7 +44,7 @@ class KnowledgeBaseFactory:
                     continue
 
                 targets += [f"{trial_id}\t1\t{i}\t{example_id}" for example_id in range(len(instance['pos_neg_example']))]
-                truths +=[f"{trial_id}\t1\t{i}\t{example_id}\t{instance['pos_neg_example'][example_id][2][1]}" for example_id in range(len(instance['pos_neg_example']))]
+                truths += [f"{trial_id}\t1\t{i}\t{example_id}\t{instance['pos_neg_example'][example_id][2][1]}" for example_id in range(len(instance['pos_neg_example']))]
                 for rv_name, rv_value in instance['graph'].base_assignment.items():
                     if len(re.findall('[0-9]+', rv_name)) == 1:
                         example_id = re.findall('[0-9]+', rv_name)[0]
