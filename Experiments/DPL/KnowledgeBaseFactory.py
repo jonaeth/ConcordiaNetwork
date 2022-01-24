@@ -19,45 +19,45 @@ class KnowledgeBaseFactory:
         predicates = defaultdict(list)
         targets = []
         truths = []
+        sentence_ids = 0
         for trial_id, trial in enumerate(training_data.keys()):
             for i in range(len(training_data[trial]['inc'])):
                 instance = training_data[trial]['inc'][i]
                 if not len(instance['pos_neg_example']):
                     continue
-
-                targets += [f"{trial_id}\t0\t{i}\t{example_id}" for example_id in range(len(instance['pos_neg_example']))]
-                truths += [f"{trial_id}\t0\t{i}\t{example_id}\t{instance['pos_neg_example'][example_id][2][1]}" for example_id in range(len(instance['pos_neg_example']))]
+                sentence_ids += 1
+                targets += [f"{sentence_ids}\t0\t{i}\t{example_id}" for example_id in range(len(instance['pos_neg_example']))]
+                truths += [f"{sentence_ids}\t0\t{i}\t{example_id}\t{instance['pos_neg_example'][example_id][2][1]}" for example_id in range(len(instance['pos_neg_example']))]
 
                 for rv_name, rv_value in instance['graph'].base_assignment.items():
                     if len(re.findall('[0-9]+', rv_name)) == 1:
                         example_id = re.findall('[0-9]+', rv_name)[0]
                         predicate_name = rv_name[:rv_name.index(example_id)]
-                        predicates[predicate_name].append(f"{trial_id}\t0\t{i}\t{example_id}\t{self.normalise_predicate_value(predicate_name, rv_value)}")
+                        predicates[predicate_name].append(f"{sentence_ids}\t0\t{i}\t{example_id}\t{self.normalise_predicate_value(predicate_name, rv_value)}")
                     else:
                         example_ids = re.findall('[0-9]+', rv_name)
                         predicate_name = rv_name[:rv_name.index(example_ids[0])]
-                        predicates[predicate_name].append(f"{trial_id}\t0\t{i}\t{example_ids[0]}\t{example_ids[1]}\t{self.normalise_predicate_value(predicate_name, rv_value)}")
+                        predicates[predicate_name].append(f"{sentence_ids}\t0\t{i}\t{example_ids[0]}\t{example_ids[1]}\t{self.normalise_predicate_value(predicate_name, rv_value)}")
 
-        for trial_id, trial in enumerate(training_data.keys()):
             for i in range(len(training_data[trial]['exc'])):
                 instance = training_data[trial]['exc'][i]
                 if not len(instance['pos_neg_example']):
                     continue
-
-                targets += [f"{trial_id}\t1\t{i}\t{example_id}" for example_id in range(len(instance['pos_neg_example']))]
-                truths += [f"{trial_id}\t1\t{i}\t{example_id}\t{instance['pos_neg_example'][example_id][2][1]}" for example_id in range(len(instance['pos_neg_example']))]
+                sentence_ids += 1
+                targets += [f"{sentence_ids}\t1\t{i}\t{example_id}" for example_id in range(len(instance['pos_neg_example']))]
+                truths += [f"{sentence_ids}\t1\t{i}\t{example_id}\t{instance['pos_neg_example'][example_id][2][1]}" for example_id in range(len(instance['pos_neg_example']))]
 
                 for rv_name, rv_value in instance['graph'].base_assignment.items():
                     if len(re.findall('[0-9]+', rv_name)) == 1:
                         example_id = re.findall('[0-9]+', rv_name)[0]
                         predicate_name = rv_name[:rv_name.index(example_id)]
                         predicates[predicate_name].append(
-                            f"{trial_id}\t1\t{i}\t{example_id}\t{self.normalise_predicate_value(predicate_name, rv_value)}")
+                            f"{sentence_ids}\t1\t{i}\t{example_id}\t{self.normalise_predicate_value(predicate_name, rv_value)}")
                     else:
                         example_ids = re.findall('[0-9]+', rv_name)
                         predicate_name = rv_name[:rv_name.index(example_ids[0])]
                         predicates[predicate_name].append(
-                            f"{trial_id}\t1\t{i}\t{example_ids[0]}\t{example_ids[1]}\t{self.normalise_predicate_value(predicate_name, rv_value)}")
+                            f"{sentence_ids}\t1\t{i}\t{example_ids[0]}\t{example_ids[1]}\t{self.normalise_predicate_value(predicate_name, rv_value)}")
 
         with open(f'Experiments/DPL/teacher/train/targets/z.psl', 'w') as f:
             for row in targets:

@@ -135,12 +135,16 @@ def main(opt):
     teacher_psl = PSLTeacher(predicates_to_infer=['z'],
                              knowledge_base_factory=knowledge_base_factory,
                              **config_concordia)
-    psl_predictions = teacher_psl.predict(valid_data)
 
     concordia = ConcordiaNetwork(student, teacher_psl, **concordia_config)
 
+    psl_predictions = teacher_psl.predict(valid_data)
+
+
     train_data_loader = EntityLinkingDataset(validation_file_path, vocab, psl_predictions)
     valid_data_loader = EntityLinkingDataset(validation_file_path, vocab, psl_predictions, is_validation=True)
+
+
 
     valid_data_loader = torch.utils.data.DataLoader(
         valid_data_loader,
