@@ -118,8 +118,6 @@ def main(opt):
                        opt.class_label,
                        opt.initial_model)
 
-    if opt.cuda:
-        model = model.cuda()
 
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     student = Student(model, None, optimizer)
