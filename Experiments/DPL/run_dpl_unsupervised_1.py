@@ -144,7 +144,7 @@ def main(opt):
 
     train_data_loader = torch.utils.data.DataLoader(
         train_data_loader,
-        batch_size=512,
+        batch_size=256,
         shuffle=True,
         num_workers=0,
         drop_last=True,
