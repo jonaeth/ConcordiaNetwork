@@ -18,21 +18,24 @@ def print_log_metrics(loss, accuracy, precision, recall, f1):
           ' f1: ({:.4f}) \n'.format(loss, accuracy, precision, recall, f1))
 
 
+threshold = 0.75
+
+
 def f1_score(predictions, targets):
-    f1 = metrics.f1_score(targets.argmax(axis=1).detach().cpu().numpy(), (F.softmax(predictions[0])[:, 1] >= 0.75).to(int).detach().cpu().numpy())
+    f1 = metrics.f1_score(targets.argmax(axis=1).detach().cpu().numpy(), (F.softmax(predictions[0], dim=1)[:, 1] >= threshold).to(int).detach().cpu().numpy())
     return torch.Tensor([f1])
 
 
 def precision_score(predictions, targets):
-    precision = metrics.precision_score(targets.argmax(axis=1).detach().cpu().numpy(), (F.softmax(predictions[0])[:, 1] >= 0.75).to(int).detach().cpu().numpy())
+    precision = metrics.precision_score(targets.argmax(axis=1).detach().cpu().numpy(), (F.softmax(predictions[0], dim=1)[:, 1] >= threshold).to(int).detach().cpu().numpy())
     return torch.Tensor([precision])
 
 
 def recall_score(predictions, targets):
-    recall = metrics.recall_score(targets.argmax(axis=1).detach().cpu().numpy(), (F.softmax(predictions[0])[:, 1] >= 0.75).to(int).detach().cpu().numpy())
+    recall = metrics.recall_score(targets.argmax(axis=1).detach().cpu().numpy(), (F.softmax(predictions[0], dim=1)[:, 1] >= threshold).to(int).detach().cpu().numpy())
     return torch.Tensor([recall])
 
 
 def accuracy_score(predictions, targets):
-    accuracy = metrics.accuracy_score(targets.argmax(axis=1).detach().cpu().numpy(), (F.softmax(predictions[0])[:, 1] >= 0.75).to(int).detach().cpu().numpy())
+    accuracy = metrics.accuracy_score(targets.argmax(axis=1).detach().cpu().numpy(), (F.softmax(predictions[0], dim=1)[:, 1] >= threshold).to(int).detach().cpu().numpy())
     return torch.Tensor([accuracy])
