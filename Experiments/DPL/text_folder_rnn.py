@@ -60,6 +60,8 @@ class TxtFolder_RNN(data.Dataset):
         maxi_num = 0
         self.text = []
         self.lens = []
+        self.sentence_ids = []
+        c = 0
 
         for key in self.data.keys():
 
@@ -77,6 +79,8 @@ class TxtFolder_RNN(data.Dataset):
                     mask = [example[0], example[1]]
                     self.instance.append((len(self.text)-1, mask, torch.FloatTensor(example[2]))) # marginal probability for p(1) 
                     self.lens.append(len_text)
+                    self.sentence_ids.append(c)
+                    c += 1
                     maxi_num += 1
 
             for instance in self.data[key]['exc']:
@@ -90,6 +94,8 @@ class TxtFolder_RNN(data.Dataset):
                     mask = [example[0], example[1] ]                                 
                     self.instance.append((len(self.text)-1, mask, torch.FloatTensor(example[2]))) # marginal probability for p(1)
                     self.lens.append(len_text)
+                    self.sentence_ids.append(c)
+                    c += 1
                     maxi_num += 1
 
         self.vocab = vocab
