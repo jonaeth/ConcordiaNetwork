@@ -25,7 +25,7 @@ from config import neural_network_config, optimiser_config, concordia_config
 from text_folder_rnn import TxtFolder_RNN
 from rnn_data_loader import collate_fn
 from visualizer import make_html_file, make_html_file_confidence
-
+import joblib
 import torch.utils.data as data
 
 
@@ -99,15 +99,21 @@ def main(opt):
     set_initial_seed(opt.seed, opt)
     wordvec = get_word2vec(opt.word_embedding)
     vocab = get_vocabulary_wrapper(opt.vocab_path)
-
+    print('W2V and vocab is loaded')
     vocab_size = len(vocab)
     print("vocab size:{}".format(vocab_size))
     opt.vocab = vocab
     result = None
     # dataset
+
     training_file_path = os.path.join(opt.dataroot, opt.train_data)
     validation_file_path = os.path.join(opt.dataroot, opt.val_data)
+    print('Loading training data')
+
     train_data = load_pickle_data(training_file_path)
+    print('Train data is loaded and vocab is loaded')
+
+
     # model
     model = EncoderRNN(opt.embed_size,
                        opt.hidden_size,
@@ -132,7 +138,7 @@ def main(opt):
 
     concordia = ConcordiaNetwork(student, teacher_psl, **concordia_config)
 
-    train_data_loader = EntityLinkingDataset(training_file_path, vocab, psl_predictions)
+    train_data_loader = EntityLinkingDataset(train_data, vocab, psl_predictions)
     valid_data_loader = EntityLinkingDataset(validation_file_path, vocab, psl_predictions, is_validation=True)
 
     valid_data_loader = torch.utils.data.DataLoader(
@@ -153,10 +159,12 @@ def main(opt):
         collate_fn=collate_fn
     )
 
-    concordia.fit_unsupervised(train_data_loader, valid_data_loader, epochs=50, metrics={'f1_score': f1_score,
+    concordia.fit_unsupervised(train_data_loader, valid_data_loader, epochs=10, metrics={'f1_score': f1_score,
                                                                      'accuracy_score': accuracy_score,
                                                                      'recall_score': recall_score,
                                                                      'precision_score': precision_score})
+
+    concordia.predict(valid_data_loader)
 
 
 if __name__ == '__main__':

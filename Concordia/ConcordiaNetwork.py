@@ -9,6 +9,7 @@ import torch.nn as nn
 class ConcordiaNetwork:
     def __init__(self, student, teacher=None, **config):
         self.student = student
+        self.student.model = self._to_device(student.model)
         self.teacher = teacher
         self.device = config['gpu_device'] if config['gpu_device'] else torch.device('cpu')
         self.config = config
@@ -115,8 +116,16 @@ class ConcordiaNetwork:
                                                            loss.item()))
         return batches_metrics
 
-    def predict(self):
-        pass
+    def predict(self, input_data_loader):
+        predictions = []
+        for data_input, target in tqdm(input_data_loader):
+            student_prediction = self.student(self._to_device(data_input)).to(torch.float)
+            predictions.append([(y_pred, y_true) for y_pred, y_true in zip(student_prediction.detach().cpu().numpy(), target.detach().cpu().numpy())])
+
+        with open('nn_predictions.txt', 'w') as fp:
+            for y_pred, y_true in predictions:
+                fp.write(f'{y_pred}_{y_true}')
+
 
     def get_data_balancing_weights(self, predictions, target):
         # make the data balance
