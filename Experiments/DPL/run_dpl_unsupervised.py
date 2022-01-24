@@ -110,7 +110,8 @@ def main(opt):
     validation_file_path = os.path.join(opt.dataroot, opt.val_data)
     print('Loading training data')
 
-    train_data = load_pickle_data(training_file_path)
+    #train_data = load_pickle_data(training_file_path)
+    valid_data = load_pickle_data(validation_file_path)
     print('Train data is loaded and vocab is loaded')
 
 
@@ -134,11 +135,11 @@ def main(opt):
     teacher_psl = PSLTeacher(predicates_to_infer=['z'],
                              knowledge_base_factory=knowledge_base_factory,
                              **config_concordia)
-    psl_predictions = teacher_psl.predict(train_data)
+    psl_predictions = teacher_psl.predict(valid_data)
 
     concordia = ConcordiaNetwork(student, teacher_psl, **concordia_config)
 
-    train_data_loader = EntityLinkingDataset(train_data, vocab, psl_predictions)
+    train_data_loader = EntityLinkingDataset(validation_file_path, vocab, psl_predictions)
     valid_data_loader = EntityLinkingDataset(validation_file_path, vocab, psl_predictions, is_validation=True)
 
     valid_data_loader = torch.utils.data.DataLoader(
@@ -158,6 +159,7 @@ def main(opt):
         drop_last=True,
         collate_fn=collate_fn
     )
+
 
     concordia.fit_unsupervised(train_data_loader, valid_data_loader, epochs=10, metrics={'f1_score': f1_score,
                                                                      'accuracy_score': accuracy_score,
