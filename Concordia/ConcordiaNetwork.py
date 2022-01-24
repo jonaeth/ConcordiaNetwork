@@ -119,7 +119,7 @@ class ConcordiaNetwork:
     def predict(self, input_data_loader):
         predictions = []
         for data_input, target in tqdm(input_data_loader):
-            student_prediction = self.student.model(self._to_device(data_input)).to(torch.float)
+            student_prediction = self.student.predict(self._to_device(data_input))
             predictions.append([(y_pred, y_true) for y_pred, y_true in zip(student_prediction.detach().cpu().numpy(), target.detach().cpu().numpy())])
 
         with open('nn_predictions.txt', 'w') as fp:
@@ -154,9 +154,9 @@ class ConcordiaNetwork:
     def compute_weighted_loss_dpl_experiment_unsupervised(self, student_predictions, targets):
         class_weights = self.get_data_balancing_weights(student_predictions, targets)
         class_weights = self._to_device(class_weights)
-        loss = F.kl_div(F.log_softmax(student_predictions, dim=1), targets, reduction='none')
-        loss = loss.sum(dim=1) * class_weights
-        loss = loss.mean()
+        loss = kl_divergence(student_predictions, targets)
+        #loss = F.kl_div(F.log_softmax(student_predictions, dim=1), targets, reduction='none')
+        #loss = loss.sum(dim=1) * class_weights
         return loss
 
     def compute_weighted_loss_dpl_experiment_supervised(self, student_predictions, teacher_predictions, targets):
