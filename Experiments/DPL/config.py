@@ -21,7 +21,7 @@ optimiser_config = {
 }
 
 concordia_config = {
-    'gpu_device': torch.device('cuda', 7),
+    'gpu_device': torch.device('cuda', 0),
     'train_online': False,
     'regression': False,
     'teacher_student_distributions_comparison': [True],
