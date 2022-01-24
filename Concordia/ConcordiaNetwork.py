@@ -42,7 +42,7 @@ class ConcordiaNetwork:
             with tqdm(unlabled_train_data_loader) as t:
                 for training_input, teacher_prediction, target in t:
                     student_prediction = self.student.predict(self._to_device(training_input))
-                    loss = self.compute_weighted_loss_dpl_experiment_soft_cross_entropy(student_prediction[0], self._to_device(teacher_prediction)[0])
+                    loss = self.compute_weighted_loss_dpl_experiment_unsupervised(student_prediction[0], self._to_device(teacher_prediction)[0])
                     self.student.fit(loss)
                     batches_metrics.append({'loss': loss.item()})
                     t.set_postfix(self.logger.build_epoch_log(batches_metrics, 'Training-usnupervised', self._epoch))
