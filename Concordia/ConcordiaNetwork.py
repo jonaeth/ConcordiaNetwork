@@ -9,11 +9,7 @@ import torch.nn as nn
 class ConcordiaNetwork:
     def __init__(self, student, teacher=None, **config):
         self.student = student
-<<<<<<< HEAD
-        self.student.model = self._to_device(student.model)
-=======
         self.student.model = self._to_device(self.student.model)
->>>>>>> 7d35fb39eb66e604e648df407bb4e7e9186032c1
         self.teacher = teacher
         self.device = config['gpu_device'] if config['gpu_device'] else torch.device('cpu')
         self.config = config
