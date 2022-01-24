@@ -120,7 +120,7 @@ class ConcordiaNetwork:
         predictions = []
         for data_input, target in tqdm(input_data_loader):
             student_prediction = self.student.predict(self._to_device(data_input))
-            predictions.append([(y_pred[0], y_true) for y_pred, y_true in zip(F.softmax(student_prediction[0]).detach().cpu().numpy(), target[0].detach().cpu().numpy())])
+            predictions += [(y_pred[1], y_true[1]) for y_pred, y_true in zip(list(F.softmax(student_prediction[0]).detach().cpu().numpy()), target.detach().cpu().numpy())]
 
         with open('nn_predictions.txt', 'w') as fp:
             for y_pred, y_true in predictions:
