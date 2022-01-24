@@ -153,7 +153,7 @@ def main(opt):
         collate_fn=collate_fn
     )
 
-    concordia.fit_unsupervised(train_data_loader, valid_data_loader, epochs=10, metrics={'f1_score': f1_score,
+    concordia.fit_unsupervised(train_data_loader, valid_data_loader, epochs=50, metrics={'f1_score': f1_score,
                                                                      'accuracy_score': accuracy_score,
                                                                      'recall_score': recall_score,
                                                                      'precision_score': precision_score})
