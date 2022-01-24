@@ -9,7 +9,6 @@ import torch.nn as nn
 class ConcordiaNetwork:
     def __init__(self, student, teacher=None, **config):
         self.student = student
-        self.student.model = self._to_device(self.student.model)
         self.teacher = teacher
         self.device = config['gpu_device'] if config['gpu_device'] else torch.device('cpu')
         self.config = config
@@ -17,6 +16,7 @@ class ConcordiaNetwork:
         self.train_online = config['train_online']
         self.regression = config['regression']
         self.logger = Logger(config, config['log_path'])
+        self.student.model = self._to_device(self.student.model)
         self._epoch = 0
 
     def fit(self, train_data_loader, val_data_loader, epochs=10, callbacks=[], metrics={}):
