@@ -41,7 +41,7 @@ class ConcordiaNetwork:
             with tqdm(unlabled_train_data_loader) as t:
                 for training_input, teacher_prediction, target in t:
                     student_prediction = self.student.predict(self._to_device(training_input))
-                    loss = self.compute_weighted_loss_dpl_experiment_unsupervised(student_prediction[0], self._to_device(teacher_prediction)[0])
+                    loss = self.compute_weighted_loss_dpl_experiment_soft_cross_entropy(student_prediction[0], self._to_device(teacher_prediction)[0])
                     self.student.fit(loss)
                     batches_metrics.append({'loss': loss.item()})
                     t.set_postfix(self.logger.build_epoch_log(batches_metrics, 'Training-usnupervised', self._epoch))
@@ -129,6 +129,17 @@ class ConcordiaNetwork:
         weight = mask_pos * (num_pos + num_neg) / num_pos
         weight += mask_neg * (num_pos + num_neg) / num_neg
         return weight
+
+    def softXEnt(self, input, target):
+        logprobs = torch.nn.functional.log_softmax(input, dim=1)
+        return -(target * logprobs).sum(dim=1) / input.shape[0]
+
+    def compute_weighted_loss_dpl_experiment_soft_cross_entropy(self, student_predictions, targets):
+        class_weights = self.get_data_balancing_weights(student_predictions, targets)
+        class_weights = self._to_device(class_weights)
+        loss = self.softXEnt(student_predictions, targets) * class_weights
+        loss = loss.mean()
+        return loss
 
 
     def compute_weighted_loss_dpl_experiment_unsupervised(self, student_predictions, targets):
