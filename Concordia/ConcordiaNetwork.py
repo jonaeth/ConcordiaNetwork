@@ -95,7 +95,7 @@ class ConcordiaNetwork:
                     loss = self.compute_gated_loss_dpl_experiments(student_prediction[0], self._to_device(teacher_prediction)[0], self._to_device(target), alpha)
                     self.student.fit(loss)
                     self.mixture_of_experts_model.train()
-                    self.mixture_of_experts_model.fit(input_features.detach(), self._to_device(teacher_prediction[0].detach()), student_prediction[0].detach(), self._to_device(target.argmax(dim=1)))
+                    self.mixture_of_experts_model.fit(self._to_device(input_features.detach()), self._to_device(teacher_prediction[0].detach()), self._to_device(student_prediction[0].detach()), self._to_device(target.argmax(dim=1)))
                     batches_metrics.append({'loss': loss.item(), 'alpha': alpha.mean().item()})
                     t.set_postfix(self.logger.build_epoch_log(batches_metrics, 'Training-supervised', self._epoch))
 
