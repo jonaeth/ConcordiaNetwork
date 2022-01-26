@@ -6,9 +6,11 @@ import os
 
 
 class EncoderRNN(nn.Module):
-    def __init__(self, embed_size, hidden_size, vocab_size, num_layers, cell, wordvec, class_label, model_path=''):
+    def __init__(self, embed_size, hidden_size, vocab_size, num_layers, cell, wordvec, class_label, model_path='', gating=False):
         """Set the hyper-parameters and build the layers."""
         super(EncoderRNN, self).__init__()
+        self.gating = gating
+
         self.hidden_size = hidden_size
         self.embed = nn.Embedding(vocab_size, embed_size)
 
@@ -56,5 +58,8 @@ class EncoderRNN(nn.Module):
 
         response = self.linear(output.view(batch, -1))
 
-        return response,
+        if self.gating:
+            return (response,), ht
+        else:
+            return response,
 
