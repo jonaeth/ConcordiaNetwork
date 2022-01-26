@@ -38,8 +38,8 @@ class ConcordiaNetwork:
 
     def fit_semisupervised_gated(self, unlabled_train_data_loader, labeled_train_data_loader, val_data_loader, epochs, metrics={}):
         for epoch in range(1, epochs + 1):
-            self.fit_unsupervised_gated(unlabled_train_data_loader, val_data_loader, 1, metrics=metrics)
             self.fit_supervised_gated(labeled_train_data_loader, val_data_loader, 1, metrics=metrics)
+            self.fit_unsupervised_gated(unlabled_train_data_loader, val_data_loader, 1, metrics=metrics)
 
 
     def fit_unsupervised(self, unlabled_train_data_loader, val_data_loader, epochs, callbacks=[], metrics={}):
@@ -90,11 +90,13 @@ class ConcordiaNetwork:
             with tqdm(labeled_training_data) as t:
                 for training_input, teacher_prediction, target in t:
                     student_prediction, input_features = self.student.predict(self._to_device(training_input))
-                    alpha = self.mixture_of_experts_model(input_features, teacher_prediction, student_prediction)
+                    self.mixture_of_experts_model.eval()
+                    alpha = self.mixture_of_experts_model(input_features, teacher_prediction[0], student_prediction[0])
                     loss = self.compute_gated_loss_dpl_experiments(student_prediction[0], self._to_device(teacher_prediction)[0], self._to_device(target), alpha)
                     self.student.fit(loss)
-                    self.mixture_of_experts_model.fit(input_features, self._to_device(teacher_prediction)[0], self._detach_variables(student_prediction), target)
-                    batches_metrics.append({'loss': loss.item(), 'alpha': alpha.item()})
+                    self.mixture_of_experts_model.train()
+                    self.mixture_of_experts_model.fit(input_features.detach(), self._to_device(teacher_prediction[0].detach()), student_prediction[0].detach(), self._to_device(target.argmax(dim=1)))
+                    batches_metrics.append({'loss': loss.item(), 'alpha': alpha.mean().item()})
                     t.set_postfix(self.logger.build_epoch_log(batches_metrics, 'Training-supervised', self._epoch))
 
             self._evaluate_student(val_data_loader, callbacks, metrics)
@@ -209,7 +211,7 @@ class ConcordiaNetwork:
         student_teacher_loss = F.kl_div(F.log_softmax(student_predictions, dim=1), teacher_predictions, reduction='none')
         student_label_loss_fn = nn.CrossEntropyLoss(reduction='none')
         student_label_loss = student_label_loss_fn(F.softmax(student_predictions, dim=1), targets)
-        return alpha * student_teacher_loss + (1-alpha) * student_label_loss
+        return (alpha.squeeze() * student_teacher_loss.sum(dim=1) + (1-alpha.squeeze()) * student_label_loss).mean()
 
     def compute_loss(self, student_predictions, teacher_predictions, target_values):
         if self.regression:

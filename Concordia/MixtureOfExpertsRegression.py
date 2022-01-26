@@ -12,7 +12,7 @@ class MixtureOfExpertsRegression(nn.Module):
         self.optimizer = Adam(self.parameters(), lr=0.001)
 
     def forward(self, x, psl_predictions, nn_predictions):
-        out = torch.concat([x, psl_predictions, nn_predictions], axis=1)
+        out = torch.concat([x, psl_predictions[:, 1].unsqueeze(dim=1), nn_predictions[:, 1].unsqueeze(dim=1)], axis=1)
         out = self.fc(out)
         return self.sigmoid(out)
 
@@ -25,7 +25,6 @@ class MixtureOfExpertsRegression(nn.Module):
 
     def compute_loss(self, teacher_prediction, student_prediction, alpha, true_targets):
         softmax = torch.nn.Softmax(dim=1)
-        mixture_loss = -torch.sum(
-            torch.log(alpha * softmax(student_prediction.detach()) +
-                      (1 - alpha) * teacher_prediction * one_hot(true_targets.detach(), num_classes=8)))
+        loss_fn = torch.nn.CrossEntropyLoss()
+        mixture_loss = loss_fn(alpha * softmax(student_prediction) + (1 - alpha) * softmax(teacher_prediction), true_targets)
         return mixture_loss
