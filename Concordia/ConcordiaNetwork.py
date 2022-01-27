@@ -39,7 +39,6 @@ class ConcordiaNetwork:
             self.fit_unsupervised(unlabled_train_data_loader, val_data_loader, 1, metrics=metrics)
             self.fit_supervised(labeled_train_data_loader, val_data_loader, 1, metrics=metrics)
 
-
     def fit_unsupervised(self, unlabled_train_data_loader, val_data_loader, epochs, callbacks=[], metrics={}):
         batches_metrics = []
         for epoch in range(1, epochs + 1):
@@ -167,45 +166,9 @@ class ConcordiaNetwork:
         weight += mask_neg * (num_pos + num_neg) / num_neg
         return weight
 
-    def softXEnt(self, input, target):
-        logprobs = torch.nn.functional.log_softmax(input, dim=1)
-        return -(target * logprobs).sum(dim=1) / input.shape[0]
-
-    def compute_weighted_loss_dpl_experiment_soft_cross_entropy(self, student_predictions, targets):
-        class_weights = self.get_data_balancing_weights(student_predictions, targets)
-        class_weights = self._to_device(class_weights)
-        loss = self.softXEnt(student_predictions, targets) * class_weights
-        loss = loss.mean()
-        return loss
-
-
-    def compute_weighted_loss_dpl_experiment_unsupervised(self, student_predictions, targets):
-        class_weights = self.get_data_balancing_weights(student_predictions, targets)
-        class_weights = self._to_device(class_weights)
-        loss = kl_divergence(student_predictions, targets)
-        #loss = F.kl_div(F.log_softmax(student_predictions, dim=1), targets, reduction='none')
-        #loss = loss.sum(dim=1) * class_weights
-        return loss
-
     def get_unsupervised_loss(self, student_predictions, teacher_predictions):
         loss = kl_divergence(student_predictions, teacher_predictions)
         return loss
-
-
-    def compute_weighted_loss_dpl_experiment_supervised(self, student_predictions, teacher_predictions, targets):
-        class_weights = self.get_data_balancing_weights(student_predictions, targets)
-        class_weights = self._to_device(class_weights)
-        loss = F.kl_div(F.log_softmax(student_predictions, dim=1), teacher_predictions, reduction='none')
-        cross_entropy_loss = nn.CrossEntropyLoss(reduction='none')
-        loss = (loss.sum(dim=1) + cross_entropy_loss(F.softmax(student_predictions, dim=1), targets)) * class_weights * 0.5
-        loss = loss.mean()
-        return loss
-
-    def compute_gated_loss_dpl_experiments(self, student_predictions, teacher_predictions, targets, alpha):
-        student_teacher_loss = F.kl_div(F.log_softmax(student_predictions, dim=1), teacher_predictions, reduction='none')
-        student_label_loss_fn = nn.CrossEntropyLoss(reduction='none')
-        student_label_loss = student_label_loss_fn(F.softmax(student_predictions, dim=1), targets)
-        return ((1 - alpha.squeeze()) * student_teacher_loss.sum(dim=1) + alpha.squeeze() * student_label_loss).mean()
 
     def compute_supervised_loss(self, student_predictions, teacher_predictions, targets):
         student_teacher_loss = F.kl_div(F.log_softmax(student_predictions, dim=1), teacher_predictions,

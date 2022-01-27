@@ -115,7 +115,7 @@ def main(opt):
     )
 
     valid_data_loader_eval = torch.utils.data.DataLoader(
-        valid_data_loader,
+        valid_data_loader_for_eval,
         batch_size=256,
         shuffle=True,
         num_workers=0,
@@ -141,7 +141,7 @@ def main(opt):
         collate_fn=collate_fn
     )
 
-    concordia.fit_semisupervised(train_data_loader_unlabeled, train_data_loader_labeled, valid_data_loader, epochs=5, metrics={'f1_score': f1_score,
+    concordia.fit_semisupervised(train_data_loader_unlabeled, train_data_loader_labeled, valid_data_loader_eval, epochs=3, metrics={'f1_score': f1_score,
                                                                  'accuracy_score': accuracy_score,
                                                                  'recall_score': recall_score,
                                                                  'precision_score': precision_score})
