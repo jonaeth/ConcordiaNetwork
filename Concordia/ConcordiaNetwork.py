@@ -1,8 +1,9 @@
 import torch
 from tqdm import tqdm
 from Concordia.utils.torch_losses import kl_divergence
-from Concordia.MixtureOfExperts import MixtureOfExperts
 from Concordia.Logger import Logger
+import torch.nn.functional as F
+
 
 class ConcordiaNetwork:
     def __init__(self, student, teacher=None, **config):
@@ -62,8 +63,18 @@ class ConcordiaNetwork:
                                                            loss.item()))
         return batches_metrics
 
-    def predict(self):
-        pass
+    def predict(self, input_data_loader):
+        predictions = []
+        for data_input, target in tqdm(input_data_loader):
+            student_prediction = self.student.predict(self._to_device(data_input))
+            predictions += [(y_pred[1], y_true[1]) for y_pred, y_true in
+                            zip(list(F.softmax(student_prediction[0]).detach().cpu().numpy()),
+                                target.detach().cpu().numpy())]
+
+        with open('nn_predictions.txt', 'w') as fp:
+            for y_pred, y_true in predictions:
+                fp.write(f'{y_pred}_{y_true}\n')
+
 
     def compute_loss(self, student_predictions, teacher_predictions, target_values):
         if self.regression:

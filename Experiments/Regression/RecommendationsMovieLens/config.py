@@ -13,9 +13,9 @@ neural_network_config = {
 
 
 optimiser_config = {
-    'lr': 0.0005,
-    'batch_size': 256,
-    'l2_lambda': 0.1,
+    'lr': 0.001,
+    'batch_size': 16,
+    'l2_lambda': 0.01,
 }
 
 concordia_config = {

@@ -154,13 +154,13 @@ def run_neural_network_only(data_fraction):
     validation_data = MovieLensDataset(df_ratings_eval)
 
     training_loader = data.DataLoader(training_data, batch_size=optimiser_config['batch_size'])
-    validation_loader = data.DataLoader(validation_data)
+    validation_loader = data.DataLoader(validation_data, batch_size=len(validation_data))
 
     concordia_network = ConcordiaNetwork(student_nn, None, **concordia_config)
 
-    concordia_network.fit(training_loader, validation_loader, metrics={'RMSE_LOSS': custom_RMSE_LOSS})
+    concordia_network.fit(training_loader, validation_loader, metrics={'RMSE_LOSS': custom_RMSE_LOSS}, epochs=20)
     print('inference is done')
-    concordia_network.predict()
+    concordia_network.predict(validation_loader)
 
 #run(5)
 #run(10)
