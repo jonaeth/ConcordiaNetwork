@@ -10,6 +10,7 @@ class MixtureOfExpertsRegression(nn.Module):
         self.fc = nn.Linear(input_vector_length + 1 + 1, 1, bias=True)
         self.sigmoid = nn.Sigmoid()
         self.optimizer = Adam(self.parameters(), lr=0.001)
+        self.alpha = -1
 
     def forward(self, x, psl_predictions, nn_predictions):
         out = torch.concat([x, psl_predictions[:, 1].unsqueeze(dim=1), nn_predictions[:, 1].unsqueeze(dim=1)], axis=1)
@@ -22,6 +23,7 @@ class MixtureOfExpertsRegression(nn.Module):
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+        self.alpha = alpha.mean().item()
 
     def compute_loss(self, teacher_prediction, student_prediction, alpha, true_targets):
         softmax = torch.nn.Softmax(dim=1)

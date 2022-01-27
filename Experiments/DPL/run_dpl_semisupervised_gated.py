@@ -96,12 +96,13 @@ def main(opt):
 
     psl_predictions_unlabeled = teacher_psl.predict(train_data)
     psl_predictions_labeled = teacher_psl.predict(labeled_train_data)
+    psl_predictions_valid = teacher_psl.predict(validation_data)
 
-    concordia = ConcordiaNetwork(student, teacher_psl, **concordia_config)
+    concordia = ConcordiaNetwork(student, teacher_psl, gating=True, **concordia_config)
 
     train_data_loader_labeled = EntityLinkingDataset(labeled_train_data, vocab, psl_predictions_labeled)
     train_data_loader_unlabeled = EntityLinkingDataset(train_data, vocab, psl_predictions_unlabeled)
-    valid_data_loader = EntityLinkingDataset(validation_data, vocab, None, is_validation=True)
+    valid_data_loader = EntityLinkingDataset(validation_data, vocab, psl_predictions_valid, is_validation=False)
 
     valid_data_loader = torch.utils.data.DataLoader(
         valid_data_loader,
@@ -130,10 +131,12 @@ def main(opt):
         collate_fn=collate_fn
     )
 
-    concordia.fit_semisupervised_gated(train_data_loader_unlabeled, train_data_loader_labeled, valid_data_loader, epochs=4, metrics={'f1_score': f1_score,
+    concordia.fit_semisupervised(train_data_loader_unlabeled, train_data_loader_labeled, valid_data_loader, epochs=4, metrics={'f1_score': f1_score,
                                                                  'accuracy_score': accuracy_score,
                                                                  'recall_score': recall_score,
                                                                  'precision_score': precision_score})
+
+    concordia.predict(valid_data_loader)
 
 
 if __name__ == '__main__':

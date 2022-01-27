@@ -20,6 +20,7 @@ class ConcordiaNetwork:
         self.student.model = self._to_device(self.student.model)
         self.gating = gating
         self._epoch = 0
+        self.alpha = 0.5
 
     def fit(self, train_data_loader, val_data_loader, epochs=10, callbacks=[], metrics={}):
         for epoch in range(1, epochs+1):
@@ -35,20 +36,16 @@ class ConcordiaNetwork:
 
     def fit_semisupervised(self, unlabled_train_data_loader, labeled_train_data_loader, val_data_loader, epochs, metrics={}):
         for epoch in range(1, epochs + 1):
-            self.fit_supervised(labeled_train_data_loader, val_data_loader, 1, metrics=metrics)
             self.fit_unsupervised(unlabled_train_data_loader, val_data_loader, 1, metrics=metrics)
+            self.fit_supervised(labeled_train_data_loader, val_data_loader, 1, metrics=metrics)
 
-    def fit_semisupervised_gated(self, unlabled_train_data_loader, labeled_train_data_loader, val_data_loader, epochs, metrics={}):
-        for epoch in range(1, epochs + 1):
-            self.fit_unsupervised_gated(unlabled_train_data_loader, val_data_loader, 1, metrics=metrics)
-            self.fit_supervised_gated(labeled_train_data_loader, val_data_loader, 1, metrics=metrics)
 
     def fit_unsupervised(self, unlabled_train_data_loader, val_data_loader, epochs, callbacks=[], metrics={}):
         batches_metrics = []
         for epoch in range(1, epochs + 1):
             with tqdm(unlabled_train_data_loader) as t:
                 for training_input, teacher_prediction, target in t:
-                    student_prediction, input_feature_space = self._get_student_predictions(self._to_device(training_input))
+                    student_prediction, _ = self._get_student_predictions(self._to_device(training_input))
                     loss = self.get_unsupervised_loss(student_prediction[0], self._to_device(teacher_prediction)[0])
                     self.student.fit(loss)
                     batches_metrics.append({'loss': loss.item()})
@@ -63,52 +60,26 @@ class ConcordiaNetwork:
             student_prediction = self.student.predict(self._to_device(data_input))
             return student_prediction, None
 
-    def fit_unsupervised_gated(self, unlabled_train_data_loader, val_data_loader, epochs, callbacks=[], metrics={}):
-        batches_metrics = []
-        for epoch in range(1, epochs + 1):
-            with tqdm(unlabled_train_data_loader) as t:
-                for training_input, teacher_prediction, target in t:
-                    student_prediction, _ = self.student.predict(self._to_device(training_input))
-                    loss = self.compute_weighted_loss_dpl_experiment_unsupervised(student_prediction[0], self._to_device(teacher_prediction)[0])
-                    self.student.fit(loss)
-                    batches_metrics.append({'loss': loss.item()})
-                    t.set_postfix(self.logger.build_epoch_log(batches_metrics, 'Training-usnupervised', self._epoch))
-
-            self._evaluate_student(val_data_loader, callbacks, metrics)
-
-
     def fit_supervised(self, labeled_training_data, val_data_loader, epochs, callbacks=[], metrics={}):
         batches_metrics = []
         for epoch in range(1, epochs + 1):
             with tqdm(labeled_training_data) as t:
                 for training_input, teacher_prediction, target in t:
-                    student_prediction = self.student.predict(self._to_device(training_input))
-                    loss = self.compute_weighted_loss_dpl_experiment_supervised(student_prediction[0], self._to_device(teacher_prediction)[0], self._to_device(target))
+                    student_prediction, input_features = self._get_student_predictions(training_input)
+                    loss = self.compute_supervised_loss(student_prediction[0], self._to_device(teacher_prediction)[0], self._to_device(target))
                     self.student.fit(loss)
-
-                    batches_metrics.append({'loss': loss.item()})
-
+                    self._fit_mixture_of_experts(input_features, teacher_prediction, student_prediction, target)
+                    batches_metrics.append({'loss': loss.item(), 'alpha': self.mixture_of_experts_model.alpha})
                     t.set_postfix(self.logger.build_epoch_log(batches_metrics, 'Training-supervised', self._epoch))
-
             self._evaluate_student(val_data_loader, callbacks, metrics)
 
-    def fit_supervised_gated(self, labeled_training_data, val_data_loader, epochs, callbacks=[], metrics={}):
-        batches_metrics = []
-        for epoch in range(1, epochs + 1):
-            with tqdm(labeled_training_data) as t:
-                for training_input, teacher_prediction, target in t:
-                    student_prediction, input_features = self.student.predict(self._to_device(training_input))
-                    self.mixture_of_experts_model.eval()
-                    alpha = self.mixture_of_experts_model(input_features, self._to_device(teacher_prediction[0]), self._to_device(student_prediction[0]))
-                    loss = self.compute_gated_loss_dpl_experiments(student_prediction[0], self._to_device(teacher_prediction)[0], self._to_device(target), alpha)
-                    self.student.fit(loss)
-                    self.mixture_of_experts_model.train()
-                    self.mixture_of_experts_model.fit(self._to_device(input_features.detach()), self._to_device(teacher_prediction[0].detach()), self._to_device(student_prediction[0].detach()), self._to_device(target.argmax(dim=1)))
-                    batches_metrics.append({'loss': loss.item(), 'alpha': alpha.mean().item()})
-                    t.set_postfix(self.logger.build_epoch_log(batches_metrics, 'Training-supervised', self._epoch))
-
-            self._evaluate_student(val_data_loader, callbacks, metrics)
-
+    def _fit_mixture_of_experts(self, input_features, teacher_prediction, student_prediction, target):
+        if not self.gating:
+            return
+        self.mixture_of_experts_model.fit(self._to_device(input_features.detach()),
+                                          self._to_device(teacher_prediction[0].detach()),
+                                          self._to_device(student_prediction[0].detach()),
+                                          self._to_device(target.argmax(dim=1)))
 
     def fit_student_alone(self, labeled_training_data, val_data_loader, epochs, callbacks=[], metrics={}):
         batches_metrics = []
@@ -118,12 +89,10 @@ class ConcordiaNetwork:
                     student_prediction = self.student.predict(self._to_device(training_input))
                     loss = self.student.loss_fn(student_prediction, self._to_device(target).to(torch.float32))
                     self.student.fit(loss)
-
                     batches_metrics.append(self._get_batch_metrics(self._detach_variables(student_prediction),
                                                                    target,
                                                                    metrics,
                                                                    loss.item()))
-
                     t.set_postfix(self.logger.build_epoch_log(batches_metrics, 'Training-supervised', self._epoch))
             self._evaluate_student(val_data_loader, callbacks, metrics)
 
@@ -162,15 +131,29 @@ class ConcordiaNetwork:
         return batches_metrics
 
     def predict(self, input_data_loader):
-        predictions = []
-        for data_input, target in tqdm(input_data_loader):
-            student_prediction = self.student.predict(self._to_device(data_input))
-            predictions += [(y_pred[1], y_true[1]) for y_pred, y_true in zip(list(F.softmax(student_prediction[0]).detach().cpu().numpy()), target.detach().cpu().numpy())]
-
+        if self.gating:
+            predictions = self._predict_with_gating(input_data_loader)
+        else:
+            predictions = self._predict_without_gating(input_data_loader)
         with open('nn_predictions.txt', 'w') as fp:
             for y_pred, y_true in predictions:
                 fp.write(f'{y_pred}_{y_true}\n')
 
+    def _predict_with_gating(self, input_data_loader):
+        predictions = []
+        for data_input, teacher_predictions, target in tqdm(input_data_loader):
+            student_prediction, input_feature_space = self.student.predict(self._to_device(data_input))
+            alpha = self.mixture_of_experts_model(input_feature_space, self._to_device(teacher_predictions)[0], student_prediction[0])
+            final_prediction = alpha.squeeze() * F.softmax(student_prediction[0], dim=1)[:, 1] + (1 - alpha.squeeze()) * teacher_predictions[0][:, 1]
+            predictions += [(y_pred.item(), y_true[1]) for y_pred, y_true in zip(final_prediction, target.detach().cpu().numpy())]
+        return predictions
+
+    def _predict_without_gating(self, input_data_loader):
+        predictions = []
+        for data_input, target in tqdm(input_data_loader):
+            student_prediction = self.student.predict(self._to_device(data_input))
+            predictions += [(y_pred[1], y_true[1]) for y_pred, y_true in zip(list(F.softmax(student_prediction[0]).detach().cpu().numpy()), target.detach().cpu().numpy())]
+        return predictions
 
     def get_data_balancing_weights(self, predictions, target):
         # make the data balance
@@ -219,12 +202,18 @@ class ConcordiaNetwork:
         return loss
 
     def compute_gated_loss_dpl_experiments(self, student_predictions, teacher_predictions, targets, alpha):
-        #class_weights = self.get_data_balancing_weights(student_predictions, targets)
-        #class_weights = self._to_device(class_weights)
         student_teacher_loss = F.kl_div(F.log_softmax(student_predictions, dim=1), teacher_predictions, reduction='none')
         student_label_loss_fn = nn.CrossEntropyLoss(reduction='none')
         student_label_loss = student_label_loss_fn(F.softmax(student_predictions, dim=1), targets)
-        return (alpha.squeeze() * student_teacher_loss.sum(dim=1) + (1-alpha.squeeze()) * student_label_loss).mean()
+        return ((1 - alpha.squeeze()) * student_teacher_loss.sum(dim=1) + alpha.squeeze() * student_label_loss).mean()
+
+    def compute_supervised_loss(self, student_predictions, teacher_predictions, targets):
+        student_teacher_loss = F.kl_div(F.log_softmax(student_predictions, dim=1), teacher_predictions,
+                                        reduction='none')
+        student_label_loss_fn = nn.CrossEntropyLoss(reduction='none')
+        student_label_loss = student_label_loss_fn(F.softmax(student_predictions, dim=1), targets)
+        loss = (0.5 * student_teacher_loss.sum(dim=1) + 0.5 * student_label_loss).mean()
+        return loss
 
     def compute_loss(self, student_predictions, teacher_predictions, target_values):
         if self.regression:
@@ -235,7 +224,6 @@ class ConcordiaNetwork:
             student_predictions_distribution = student_predictions
         return 0.5 * self._get_teacher_student_loss(teacher_predictions, student_predictions_distribution) \
                + 0.5 * self._to_device(self.student.loss_fn(student_predictions_val, target_values.to(torch.float32)))
-
 
     def _get_teacher_student_loss(self, teacher_predictions, student_predictions):
         kl_divergence_loss = 0
