@@ -102,9 +102,19 @@ def main(opt):
 
     train_data_loader_labeled = EntityLinkingDataset(labeled_train_data, vocab, psl_predictions_labeled)
     train_data_loader_unlabeled = EntityLinkingDataset(train_data, vocab, psl_predictions_unlabeled)
-    valid_data_loader = EntityLinkingDataset(validation_data, vocab, psl_predictions_valid, is_validation=False)
+    valid_data_loader = EntityLinkingDataset(validation_data, vocab, psl_predictions_valid, is_validation=True)
+    valid_data_loader_for_eval = EntityLinkingDataset(validation_data, vocab, psl_predictions_valid, is_validation=False)
 
     valid_data_loader = torch.utils.data.DataLoader(
+        valid_data_loader,
+        batch_size=256,
+        shuffle=True,
+        num_workers=0,
+        drop_last=True,
+        collate_fn=collate_fn
+    )
+
+    valid_data_loader_eval = torch.utils.data.DataLoader(
         valid_data_loader,
         batch_size=256,
         shuffle=True,
@@ -131,12 +141,12 @@ def main(opt):
         collate_fn=collate_fn
     )
 
-    concordia.fit_semisupervised(train_data_loader_unlabeled, train_data_loader_labeled, valid_data_loader, epochs=4, metrics={'f1_score': f1_score,
+    concordia.fit_semisupervised(train_data_loader_unlabeled, train_data_loader_labeled, valid_data_loader, epochs=5, metrics={'f1_score': f1_score,
                                                                  'accuracy_score': accuracy_score,
                                                                  'recall_score': recall_score,
                                                                  'precision_score': precision_score})
 
-    concordia.predict(valid_data_loader)
+    concordia.predict(valid_data_loader_eval)
 
 
 if __name__ == '__main__':
