@@ -130,7 +130,7 @@ def main(opt):
         collate_fn=collate_fn
     )
 
-    concordia.fit_semisupervised_gated(train_data_loader_unlabeled, train_data_loader_labeled, valid_data_loader, epochs=10, metrics={'f1_score': f1_score,
+    concordia.fit_semisupervised_gated(train_data_loader_unlabeled, train_data_loader_labeled, valid_data_loader, epochs=4, metrics={'f1_score': f1_score,
                                                                  'accuracy_score': accuracy_score,
                                                                  'recall_score': recall_score,
                                                                  'precision_score': precision_score})
