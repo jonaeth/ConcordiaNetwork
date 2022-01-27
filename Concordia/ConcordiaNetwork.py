@@ -13,6 +13,7 @@ class ConcordiaNetwork:
         self.device = config['gpu_device'] if config['gpu_device'] else torch.device('cpu')
         self.config = config
         self.mixture_of_experts_model = MixtureOfExpertsRegression(256) #TODO Figure this out!
+        self.student.model = self._to_device(self.mixture_of_experts_model)
         self.train_online = config['train_online']
         self.regression = config['regression']
         self.logger = Logger(config, config['log_path'])
