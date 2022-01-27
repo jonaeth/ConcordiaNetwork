@@ -252,7 +252,7 @@ class ConcordiaNetwork:
         batches_metrics = []
         t = tqdm(val_data_loader)
         for validation_input, target in t:
-            student_prediction = self.student.predict(self._to_device(validation_input))
+            student_prediction, _ = self.student.predict(self._to_device(validation_input))
             if self.regression:
                 loss = self.student.loss_fn(student_prediction[0], self._to_device(target))
             else:
