@@ -91,7 +91,7 @@ class ConcordiaNetwork:
                 for training_input, teacher_prediction, target in t:
                     student_prediction, input_features = self.student.predict(self._to_device(training_input))
                     self.mixture_of_experts_model.eval()
-                    alpha = self.mixture_of_experts_model(input_features, teacher_prediction[0], student_prediction[0])
+                    alpha = self.mixture_of_experts_model(input_features, self._to_device(teacher_prediction[0]), self._to_device(student_prediction[0]))
                     loss = self.compute_gated_loss_dpl_experiments(student_prediction[0], self._to_device(teacher_prediction)[0], self._to_device(target), alpha)
                     self.student.fit(loss)
                     self.mixture_of_experts_model.train()
