@@ -1,9 +1,10 @@
 from sklearn.neighbors import NearestNeighbors
 import operator
-from HyperTransformations.generate_left_predicates import *
-from HyperTransformations.fix_scale import normalize_ratings
-from HyperTransformations.DataTransformation import DataTransformation
+from Experiments.Regression.Utils.HyperTransformations.generate_left_predicates import *
+from Experiments.Regression.Utils.HyperTransformations.fix_scale import normalize_ratings
+from Experiments.Regression.Utils.HyperTransformations.DataTransformation import DataTransformation
 import os
+import pandas as pd
 
 
 class KnowledgeBaseFactory:

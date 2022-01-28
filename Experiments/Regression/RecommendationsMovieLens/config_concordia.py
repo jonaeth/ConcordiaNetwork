@@ -13,8 +13,8 @@ config_concordia = {
     ###################################################################
     # Teacher
     ###################################################################
-    'teacher_model_path': 'Experiments/RecommendationsMovieLens/teacher/model',
-    'ground_predicates_path': 'Experiments/RecommendationsMovieLens/teacher/train',
+    'teacher_model_path': 'Experiments/Regression/RecommendationsMovieLens/teacher/model',
+    'ground_predicates_path': 'Experiments/Regression/RecommendationsMovieLens/teacher/train',
     'psl_options': {
         'log4j.threshold': 'OFF',
         'votedperceptron.numsteps': '2'
@@ -23,5 +23,5 @@ config_concordia = {
     'jvm_options': ['-Xms4096M', '-Xmx12000M'],
     'teacher_student_distributions_comparison': [True, False],
     'markov_blanket_file': 'markov_blanket.psl',
-    'predicates_folder': 'Experiments/RecommendationsMovieLens/teacher/train'
+    'predicates_folder': 'Experiments/Regression/RecommendationsMovieLens/teacher/train'
 }

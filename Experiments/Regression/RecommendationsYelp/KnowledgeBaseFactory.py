@@ -1,8 +1,8 @@
 from sklearn.neighbors import NearestNeighbors
 import operator
-from HyperTransformations.generate_left_predicates import *
-from HyperTransformations.fix_scale import normalize_ratings
-from HyperTransformations.DataTransformation import DataTransformation
+from Experiments.Regression.Utils.HyperTransformations.generate_left_predicates import *
+from Experiments.Regression.Utils.HyperTransformations.fix_scale import normalize_ratings
+from Experiments.Regression.Utils.HyperTransformations.DataTransformation import DataTransformation
 
 
 class KnowledgeBaseFactory:
@@ -15,7 +15,23 @@ class KnowledgeBaseFactory:
         df_items = training_data[1]
         df_ratings_obs = training_data[2]
 
-        self.transformed_data = DataTransformation(df_users, df_items, df_ratings_obs, True)
+        self.transformed_data = DataTransformation(df_users, df_items, df_ratings_obs, False)
+
+        df_rated_obs = pd.concat([df_ratings_obs, df_ratings_targets])[['user_id', 'item_id']]
+        df_rated_obs.to_csv(f'{self.path_to_save_predicates}/observations/rated.psl', header=False, index=False,
+                            sep='\t')
+        df_ratings_obs[['user_id', 'item_id', 'rating']].to_csv(
+            f'{self.path_to_save_predicates}/observations/rating.psl',
+            header=False, index=False,
+            sep='\t')
+
+        df_ratings_targets[['user_id', 'item_id']].to_csv(f'{self.path_to_save_predicates}/targets/rating.psl',
+                                                          header=False, index=False,
+                                                          sep='\t')
+        df_ratings_targets[['user_id', 'item_id', 'rating']].to_csv(f'{self.path_to_save_predicates}/truths/rating.psl',
+                                                                    header=False,
+                                                                    index=False, sep='\t')
+
         print('Writing predicate data')
         self._build_avg_item_obs()
         self._build_avg_user_obs()
@@ -32,26 +48,16 @@ class KnowledgeBaseFactory:
         self._build_sim_mf_euclidean_items_obs()
         self._build_sim_mf_euclidean_users_obs()
         normalize_ratings(self.path_to_save_predicates)
-        df_rated_obs = pd.concat([df_ratings_obs, df_ratings_targets])[['user_id', 'item_id']]
-        df_rated_obs.to_csv(f'{self.path_to_save_predicates}/observations/rated.psl', header=None, index=False, sep='\t')
-        df_ratings_obs[['user_id', 'item_id', 'rating']].to_csv(f'{self.path_to_save_predicates}/observations/rating.psl',
-                                                                header=None, index=False,
-                                                                sep='\t')
-
-        df_ratings_targets[['user_id', 'item_id']].to_csv(f'{self.path_to_save_predicates}/targets/rating.psl',
-                                                          header=None, index=False,
-                                                          sep='\t')
-        df_ratings_targets[['user_id', 'item_id', 'rating']].to_csv(f'{self.path_to_save_predicates}/truths/rating.psl',
-                                                                    header=None,
-                                                                    index=False, sep='\t')
 
     def _build_avg_item_obs(self):
         pd.DataFrame(self.transformed_data.df_ratings.groupby('item_id').rating.apply(np.mean).reset_index()) \
-            .to_csv(f'{self.path_to_save_predicates}/observations/avg_item_rating.psl', header=False, index=False, sep='\t')
+            .to_csv(f'{self.path_to_save_predicates}/observations/avg_item_rating.psl',
+                    header=False, index=False, sep='\t')
 
     def _build_avg_user_obs(self):
         pd.DataFrame(self.transformed_data.df_ratings.groupby('user_id').rating.apply(np.mean).reset_index()) \
-            .to_csv(f'{self.path_to_save_predicates}/observations/avg_user_rating.psl', header=False, index=False, sep='\t')
+            .to_csv(f'{self.path_to_save_predicates}/observations/avg_user_rating.psl',
+                    header=False, index=False, sep='\t')
 
     def _build_users_are_friends_obs(self):
         if 'friends_idx' not in self.transformed_data.df_users.columns:

@@ -8,14 +8,14 @@ from Concordia.Teacher import PSLTeacher
 from Concordia.Student import Student
 from Concordia.ConcordiaNetwork import ConcordiaNetwork
 
-from Experiments.CollectiveActivity.config import Config
-from Experiments.CollectiveActivity.NeuralNetworkModels.BaseNet import BaseNet
-from Experiments.CollectiveActivity.KnowledgeBaseFactory import KnowledgeBaseFactory
-from Experiments.CollectiveActivity.collective import return_dataset
-from Experiments.CollectiveActivity.config_concordia import config_concordia
-from Experiments.CollectiveActivity.CollectiveActivityCallback import CollectiveActivityCallback
-from Experiments.CollectiveActivity.CAD_metrics_and_loss import *
-from Experiments.CollectiveActivity.logging import *
+from Experiments.Classification.CollectiveActivity.config import Config
+from Experiments.Classification.CollectiveActivity.NeuralNetworkModels.BaseNet import BaseNet
+from Experiments.Classification.CollectiveActivity.KnowledgeBaseFactory import KnowledgeBaseFactory
+from Experiments.Classification.CollectiveActivity.collective import return_dataset
+from Experiments.Classification.CollectiveActivity.config_concordia import config_concordia
+from Experiments.Classification.CollectiveActivity.CollectiveActivityCallback import CollectiveActivityCallback
+from Experiments.Classification.CollectiveActivity.CAD_metrics_and_loss import *
+from Experiments.Classification.CollectiveActivity.logging import *
 
 
 def main(backbone, use_gpu, gpu_id):
@@ -35,7 +35,7 @@ def main(backbone, use_gpu, gpu_id):
     show_config(cfg)
 
     # Teacher
-    path_to_save_predicates = 'Experiments/CollectiveActivity/teacher/train'
+    path_to_save_predicates = 'Experiments/Classification/CollectiveActivity/teacher/train'
     knowledge_base_factory = KnowledgeBaseFactory(path_to_save_predicates, cfg)
     teacher_psl = PSLTeacher(predicates_to_infer=['DOING', None],
                              knowledge_base_factory=knowledge_base_factory,

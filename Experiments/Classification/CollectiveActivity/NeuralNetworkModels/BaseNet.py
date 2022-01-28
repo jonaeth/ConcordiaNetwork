@@ -1,7 +1,7 @@
-from Experiments.CollectiveActivity.NeuralNetworkModels.utils import *
+from Experiments.Classification.CollectiveActivity.NeuralNetworkModels.utils import *
 import torch.nn as nn
-from Experiments.CollectiveActivity.NeuralNetworkModels.MobileNet import MobileNet
-from Experiments.CollectiveActivity.NeuralNetworkModels.InceptionNet import MyInception_v3
+from Experiments.Classification.CollectiveActivity.NeuralNetworkModels.MobileNet import MobileNet
+from Experiments.Classification.CollectiveActivity.NeuralNetworkModels.InceptionNet import MyInception_v3
 from torchvision.ops import roi_align
 import torch
 import torch.nn.functional as F

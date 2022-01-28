@@ -13,15 +13,9 @@ neural_network_config = {
 
 
 optimiser_config = {
-<<<<<<< HEAD
     'lr': 0.0005,
     'batch_size': 1,
     'l2_lambda': 0.1,
-=======
-    'lr': 0.001,
-    'batch_size': 16,
-    'l2_lambda': 0.01,
->>>>>>> master
 }
 
 concordia_config = {
@@ -29,9 +23,5 @@ concordia_config = {
     'train_online': False,
     'regression': True,
     'teacher_student_distributions_comparison': [True],
-<<<<<<< HEAD
     'log_path': f'Experiments/RecommendationsMovieLens/logs/log_{time_str}.txt'
-=======
-    'log_path': f'Experiments/Regression/RecommendationsMovieLens/logs/log_{time_str}.txt'
->>>>>>> master
 }
