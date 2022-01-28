@@ -20,7 +20,6 @@ class Student:
         else:
             return student_loss_function
 
-    # TODO implement function
     def write_model_to_file(self, file_name):
         pass
 

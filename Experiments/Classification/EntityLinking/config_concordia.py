@@ -13,8 +13,8 @@ config_concordia = {
     ###################################################################
     # Teacher
     ###################################################################
-    'teacher_model_path': 'Experiments/DPL/teacher/model',
-    'ground_predicates_path': 'Experiments/DPL/teacher/train',
+    'teacher_model_path': 'Experiments/EntityLinking/teacher/model',
+    'ground_predicates_path': 'Experiments/EntityLinking/teacher/train',
     'psl_options': {
         'log4j.threshold': 'OFF'
     },
@@ -22,6 +22,6 @@ config_concordia = {
     'jvm_options': ['-Xms4096M', '-Xmx12000M'],
     'teacher_student_distributions_comparison': [True, False],
     'markov_blanket_file': 'markov_blanket.psl',
-    'predicates_folder': 'Experiments/DPL/teacher/train',
+    'predicates_folder': 'Experiments/EntityLinking/teacher/train',
     'supervision': 'unsupervised'  # 'semi-supervised', 'supervised'
 }

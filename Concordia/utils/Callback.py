@@ -1,6 +1,5 @@
 from abc import ABC
 
-# TODO Modestas: implement all necessary callbacks
 class Callback(ABC):
     def __init__(self):
         pass

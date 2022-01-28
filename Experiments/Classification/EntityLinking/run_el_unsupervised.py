@@ -2,14 +2,10 @@ from __future__ import print_function
 
 import sys
 
-sys.path.append('.')
+sys.path.append('')
 
-import torch
-import torch.nn.functional as F
-from torch.nn import KLDivLoss
 import torch.optim as optim
 from NeuralNetworkModels.EncoderRNN import EncoderRNN
-from data_loader import CreateDataLoader
 import os
 import sys
 from load_arguments import load_arguments
@@ -17,15 +13,13 @@ from Concordia.Student import Student
 from data_preparation import *
 from config_concordia import config_concordia
 from Concordia.Teacher import PSLTeacher
-from Experiments.DPL.KnowledgeBaseFactory import KnowledgeBaseFactory
+from Experiments.Classification.EntityLinking.KnowledgeBaseFactory import KnowledgeBaseFactory
 from metrics import *
 from validation_utils import *
 from Concordia.ConcordiaNetwork import ConcordiaNetwork
-from config import neural_network_config, optimiser_config, concordia_config
+from config import concordia_config
 from text_folder_rnn import TxtFolder_RNN
 from rnn_data_loader import collate_fn
-from visualizer import make_html_file, make_html_file_confidence
-import joblib
 import torch.utils.data as data
 
 
@@ -55,7 +49,7 @@ def get_data_balancing_weights(predictions, target):
     return weight
 
 
-def compute_dpl_loss(predictions, targets, args):
+def compute_el_loss(predictions, targets, args):
     kl_loss = torch.nn.KLDivLoss(reduction='none')
     kl_loss(F.log_softmax(predictions, dim=1), targets)
 
@@ -110,8 +104,8 @@ def main(opt):
     validation_file_path = os.path.join(opt.dataroot, opt.val_data)
     print('Loading training data')
 
-    #train_data = load_pickle_data(training_file_path)
-    valid_data = load_pickle_data(validation_file_path)
+    train_data = load_pickle_data(training_file_path)
+    #valid_data = load_pickle_data(validation_file_path)
     print('Train data is loaded and vocab is loaded')
 
 
@@ -131,20 +125,16 @@ def main(opt):
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     student = Student(model, None, optimizer)
 
-    knowledge_base_factory = KnowledgeBaseFactory('Experiments/DPL/teacher/train')
+    knowledge_base_factory = KnowledgeBaseFactory('Experiments/EntityLinking/teacher/train')
     teacher_psl = PSLTeacher(predicates_to_infer=['z'],
                              knowledge_base_factory=knowledge_base_factory,
                              **config_concordia)
+    psl_predictions = teacher_psl.predict(train_data)
 
     concordia = ConcordiaNetwork(student, teacher_psl, **concordia_config)
 
-    psl_predictions = teacher_psl.predict(valid_data)
-
-
-    train_data_loader = EntityLinkingDataset(validation_file_path, vocab, psl_predictions)
+    train_data_loader = EntityLinkingDataset(train_data, vocab, psl_predictions)
     valid_data_loader = EntityLinkingDataset(validation_file_path, vocab, psl_predictions, is_validation=True)
-
-
 
     valid_data_loader = torch.utils.data.DataLoader(
         valid_data_loader,
@@ -166,7 +156,7 @@ def main(opt):
 
 
     concordia.fit_unsupervised(train_data_loader, valid_data_loader, epochs=10, metrics={'f1_score': f1_score,
-                                                                    'accuracy_score': accuracy_score,
+                                                                     'accuracy_score': accuracy_score,
                                                                      'recall_score': recall_score,
                                                                      'precision_score': precision_score})
 

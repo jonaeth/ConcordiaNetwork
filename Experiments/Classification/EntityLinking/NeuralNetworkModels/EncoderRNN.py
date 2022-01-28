@@ -1,7 +1,6 @@
-from Experiments.DPL.NeuralNetworkModels.GlobalAttention import GlobalAttention
+from Experiments.Classification.EntityLinking.NeuralNetworkModels.GlobalAttention import GlobalAttention
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import os
 
 

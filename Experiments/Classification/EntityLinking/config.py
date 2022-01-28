@@ -25,5 +25,5 @@ concordia_config = {
     'train_online': False,
     'regression': False,
     'teacher_student_distributions_comparison': [True],
-    'log_path': f'Experiments/DPL/logs/log_{time_str}.txt'
+    'log_path': f'Experiments/Classification/EntityLinking/logs/log_{time_str}.txt'
 }

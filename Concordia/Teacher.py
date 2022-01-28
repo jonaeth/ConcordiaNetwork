@@ -47,16 +47,15 @@ class PSLTeacher(Teacher):
                          predicates=predicates,
                          predicates_to_infer=predicates_to_infer, **config)
         if 'cli_options' in config:
-            self.cli_options = config['cli_options']  # TODO Discuss need
+            self.cli_options = config['cli_options']
         else:
             self.cli_options = []
         if 'psl_options' in config:
             self.psl_options = config['psl_options']
         else:
             self.psl_options = {
-                'log4j.threshold': 'OFF'#,
-                #'votedperceptron.numsteps': '2'
-            }  # TODO Discuss good default
+                'log4j.threshold': 'OFF'
+            }
         if 'jvm_options' in config:
             self.jvm_options = config['jvm_options']
         else:
@@ -129,11 +128,9 @@ class PSLTeacher(Teacher):
             for predicate in self.predicates_to_infer:
                 map_estimates = psl_map_inference[self.model.get_predicate(predicate)].rename({'truth': 2}, axis=1)
                 self.model.get_predicate(predicate).add_data(Partition.OBSERVATIONS, map_estimates)
-                # TODO instantiate HB based on array of predicates of interest
                 herbrand_base = HerbrandBase(self.predicates_folder + self.markov_blanket_file, predicate)
                 target_predicate_df = self.model.get_predicate(predicate).data()[Partition.OBSERVATIONS]
                 target_predicate_arguments = [tuple(row[:-1]) for row in target_predicate_df.values]
-                # TODO don't turn into array and then access it inside but rather straight as a df
                 predictions.append(get_pdf_estimate_of_targets_integration(herbrand_base,
                                                                            facts,
                                                                            target_predicate_arguments,
@@ -146,13 +143,6 @@ class PSLTeacher(Teacher):
                 else:
                     psl_predictions = self.reorder_predictions_with_targets(results[self.model.get_predicate(predicate)],
                                                                        self.model.get_predicate(predicate)._data[Partition.TARGETS])['truth'].values
-                    # TODO: Correct this in other experiments - this logic should be outside of here.
-                    '''
-                    psl_predictions = results[self.model.get_predicate(predicate)]\
-                                                        .sort_values(by=[0, 1])\
-                                                        .pivot(index=0, columns=1, values='truth')\
-                                                        .values
-                    '''
                     predictions.append(torch.Tensor(psl_predictions))
         return predictions
 
@@ -169,7 +159,7 @@ class PSLTeacher(Teacher):
         observed_predicates = [predicate.replace('.psl', '') for predicate in os.listdir(observations_folder)]
         target_predicates = [predicate.replace('.psl', '') for predicate in os.listdir(targets_folder)]
         truth_predicates = [predicate.replace('.psl', '') for predicate in os.listdir(truths_folder)]
-        for predicate in self.predicates:  # TODO Change logic. Loop folders instead
+        for predicate in self.predicates:
             if predicate not in grounded_predicates:
                 self.model.get_predicate(predicate).clear_data()
             if predicate in observed_predicates:
